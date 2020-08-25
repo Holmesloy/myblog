@@ -1,0 +1,1 @@
+Hi，this is frontend page
