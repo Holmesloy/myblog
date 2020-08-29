@@ -22,13 +22,14 @@ module.exports = {
         }
       ],
       sidebar: {
+        
         "/frontend/":[
           ["", "Hello"]
         ],
         "/algorithm/":[
           ["", "算法"],
           ["offer","剑指offer题解"],
-          ["leetcode", "leetcode题解"]
+          ["leetcode", "leetcode题解",]
         ],
         "/notes/": [
           ["", "笔记"]
