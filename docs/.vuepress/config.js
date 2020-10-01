@@ -7,10 +7,14 @@ module.exports = {
     ],
     themeConfig: {
       logo: "/cc.png",
+      displayAllHeaders: false,
+      smoothScroll: true,
+      // 主页导航栏配置
       nav: [
         { text: '主页', link: '/' },
         { text: '前端知识', link: '/frontend/' },
         { text: '算法', link: '/algorithm/' },
+        { text: '项目', link: '/project/' },
         { text: '笔记', link: '/notes/' },
         // 下拉列表的配置
         {
@@ -21,15 +25,32 @@ module.exports = {
           ]
         }
       ],
+      // 侧边栏配置
       sidebar: {
         
         "/frontend/":[
-          ["", "Hello"]
+          ["", "前端"],
+          ["js", "JS"],
+          ["http", "HTTP"],
+          ["css", "CSS"],
+          ["browser", "浏览器"],
+          ["webpack", "Webpack"],
+          ["performance", "性能优化"],
+          ["security", "Web安全"],
+          ["vue", "Vue"],
+          ["react", "React"]
+        
         ],
         "/algorithm/":[
-          ["", "算法"],
+          ["", "笔记"],
           ["offer","剑指offer题解"],
-          ["leetcode", "leetcode题解",]
+          ["interview", "常考算法"],
+          ["leetcode", "leetcode题解"],
+          ["classification", "算法分类"]
+        ],
+        "/project/":[
+          ["", "项目"]
+
         ],
         "/notes/": [
           ["", "笔记"]

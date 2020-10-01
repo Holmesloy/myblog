@@ -44,7 +44,57 @@ sidebarDepth: 2
    }
    ```
 ## 剑指offer题目
-1. 数组中重复的数字  
+### 1. 数组中重复的数字  
    描述：在一个长度为 n 的数组 nums 里的所有数字都在 0～n-1 的范围内。数组中某些数字是重复的，但不知道有几个数字重复了，也不知道每个数字重复了几次。请找出数组中任意一个重复的数字。  
+
+   思路1：使用Set集合结构，将nums中数字依次放入Set集合中，若添加失败，说明该数字重复，直接返回。  
+   Java版本：  
+   ```java
+   class Solution{
+       public int findRepeatNumber(int[] nums){
+           Set<Integer> set = new HashSet<Integer>();  // HashSet数据结构
+           for(int num : nums){   
+               if(!set.add(num)){  // set.add方法会返回一个boolean值
+                   return num;
+               }
+           }
+           return -1;
+       }
+   }
+   ```
+   Javascript版本： 
+   ```javascript
+    var findRepeatNumber = function(nums) {
+       let set = new Set();    // Set数据结构
+       for(var num of nums){
+           let curLength = set.size;
+           set.add(num)
+           if(curLength == set.size)  // 添加失败说明数字重复，返回
+               return num
+       }
+        return -1;
+    };
+   ```
+   思路2：由于数组长度为n，数字都在0~n-1范围内，因此若不存在重复数字，则数组进行排序后，大小为i的数字应该正好在数组下标为i的位置。所以我们从头遍历数组，遇到下标为i的数字不等于i时，假设等于n，则用下标n的数字与该数字进行交换，若存在相等数字则返回，否则一直交换到放在正确的位置。
+   ```java
+   class Solution{
+       public int findRepeatNumber(int[] nums){
+           for(int i = 0; i < nums.length; i++){
+               while(nums[i] != i){
+                   if(nums[i] == nums[nums[i]]){
+                       return nums[i];
+                   }
+                   int temp = nums[i];
+                   nums[i] = nums[temp];
+                   nums[temp] = temp;
+               }
+           }
+           return -1;
+       }
+   }
+   ```
+
+   
+
 
    
