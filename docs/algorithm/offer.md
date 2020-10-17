@@ -1,7 +1,3 @@
----
-sidebarDepth: 2
----
-
 # 剑指offer
 
 ## 在线OJ输入输出

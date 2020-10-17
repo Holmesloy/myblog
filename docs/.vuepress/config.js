@@ -26,11 +26,11 @@ module.exports = {
         }
       ],
       // 侧边栏配置
+      sidebarDepth: 'auto',
       sidebar: {
         
         "/frontend/":[
-          ["", "前端"],
-          ["js", "JS"],
+          ["", "JS"],
           ["http", "HTTP"],
           ["css", "CSS"],
           ["browser", "浏览器"],
@@ -55,6 +55,13 @@ module.exports = {
         "/notes/": [
           ["", "笔记"]
         ],
+      }
+    },
+    configureWebpack: {
+      resolve: {
+        alias: {
+          '@alias': '../.vuepress/image'
+        }
       }
     }
   }
