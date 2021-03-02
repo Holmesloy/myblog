@@ -12,5 +12,8 @@
     "dev": "vuepress dev docs",
     "docs:build": "vuepress build docs",
     "deploy": "./deploy.sh"
+  },
+  "dependencies": {
+    "vuepress-theme-reco": "^1.5.7"
   }
 }
