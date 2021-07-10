@@ -24,8 +24,8 @@ tags:
 * Event loop继续轮询查找  
 
 ### 宏任务和微任务  
-* 宏任务：setTimeout，setInterval，Ajax，DOM事件  
-* 微任务：Promise async/await  
+* 宏任务：setTimeout，setInterval，I/O，requestAnimationFrame（浏览器） 
+* 微任务：Promise async/await  MutationObserver（浏览器）  
 * 先执行微任务，后执行宏任务  
 * 如果任务类型相同，则按顺序执行  
 * 注意：初始化Promise时，会立即执行，里面的then()或者catch()才是微任务！！  
@@ -34,7 +34,7 @@ tags:
 * 微任务：DOM渲染前触发，如Promise  
 * 宏任务：DOM渲染后触发，如setTimeout  
 
-原因：Promise微任务是ES6规范，它放在一个单独的microTask队列中，宏任务是浏览器规定的，macroTack队列不同，所以是先执行微任务队列中的任务再执行宏任务队列中的任务。  
+原因：Promise微任务是ES6规范，它放在一个单独的microTask队列中，浏览器需要先执行微任务，获取到一些数据，然后如果dom改变的话，会去重新渲染dom，然后再去执行宏任务，宏任务是浏览器规定的，执行一些操作，在dom渲染后执行。  
 所以，执行顺序如下：  
 1. Call Stack（执行栈）清空  
 2. 执行当前微任务（microTask）  

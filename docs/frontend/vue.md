@@ -1,8 +1,12 @@
-# Vue
+# Vue  
 
 ## Vue基本使用  
 ### Vue组成  
-一个Vue实例一般由`<template></template>`视图模板、`<script></script>`中的data数据和相关方法、`<style></style>`中的页面样式组成。  
+一个Vue实例一般由  
+* `<template></template>`视图模板  
+* `<script></script>`中的data数据和相关方法  
+* `<style></style>`中的页面样式组成。  
+
 **优点**  
 * 轻量、快速，数据双向绑定，数据驱动视图，操作简单  
 * 组件化，组件可封装并复用  
@@ -10,7 +14,7 @@
 
 **Vue指令**  
 * v-bind：简写为`:`，用于动态绑定标签属性  
-* v-on：简写为`@'，用于绑定事件，可以监听多个方法  
+* v-on：简写为`@`，用于绑定事件，可以监听多个方法  
 * `<input type="text" v-on="{input: onInput, blur: onBlur}"/>`  
 
 
@@ -40,7 +44,7 @@
 
 ### computed和watch  
 **计算属性**  
-* 用于变量存在复杂逻辑时的计算，依赖其他属性算出来得到的值（注意结果就是一个值）  
+* 用于变量存在复杂逻辑时的计算，依赖其他属性算出来得到的值（也可以是数组和对象等）  
 * computed有缓存，只有其依赖的属性改变时，才会重新计算  
 * 不支持异步，其中的异步操作无效  
 ```js  
@@ -157,7 +161,7 @@ export default{
     /* props:{       // 比较完整的写法，有默认值和类型，类型不正确时vue会警告  
         myData:{  
             default: "",  
-            type: string,  
+            type: String,  
         }  
     } */  
     data(){  
@@ -195,6 +199,9 @@ this.$emit('myEvent', '传递的数据')
 * keep-alive  
 * mixin  
 
+### 自定义v-model
+![v-model](@alias/v-model.png)
+
 ### $nextTick  
 * Vue响应式中，data变化后DOM不是立即变化，而是异步渲染  
 * $nextTick是执行延迟回调，会在DOM渲染之后被触发，所以修改数据之后使用它可以在回调中获取更新后的DOM  
@@ -214,19 +221,42 @@ this.$nextTick(() => {
 ```  
 
 ### slot  
+* 可以看成组件的扩展，用于向组件中我们想要的位置添加一些内容  
+
+**slot的理解**  
+```html 
+1. 首先考虑父组件向子组件中传递数据  
+<!-- 父组件   -->
+<Child myData="数据">我想添加的内容</Child>  
+<!-- 注意：向子组件中传递的数据只有myData，默认包裹的所有内容都会被忽略   -->
+
+2. 那么怎么向子组件中插入其他的数据，或者标签元素呢？答：子组件中使用slot  
+
+<!-- 子组件   -->
+<template>  
+    <div>  
+    <a>我是一个a标签</a>  
+    <slot>我是slot默认内容</slot>   // 注意这里的slot  
+    </div>  
+</template>  
+3. 子组件中的slot会被完全替代为父组件中“我想添加的内容”  
+<!-- 如果父组件中不添加内容，则子组件显示slot的默认内容，也可以不设置   -->
+<!-- 另外，slot可以设置style属性   -->
+```  
+
 **基本使用**  
-很多时候，我们封装了一个子组件之后，在父组件使用的时候，想添加一些dom元素，这个时候就可以使用slot插槽了，但是这些dom是否显示以及在哪里显示，则是看子组件中slot组件的位置了。
-* 插槽从父组件获取值  
-```js  
-//  
+很多时候，我们封装了一个子组件之后，在父组件使用的时候，想添加一些dom元素，这个时候就可以使用slot插槽了，但是这些dom是否显示以及在哪里显示，则是看子组件中slot组件的位置了。  
+插槽从父组件获取值：  
+```html 
+<!-- 父组件中   -->
 <SlotDemo :url="website.url">  
-    {{website.title}}  
+    {{website.title}}    // 传入了父组件中的title变量  
 </SlotDemo>  
 
-//  
+<!-- 子组件中   -->
 <a :href="url">  
-    <slot>  
-        默认内容，若父组件没设置内容，显示此内容  
+    <slot>   <!-- 这里slot标签就被替换为了父组件中的titile变量 --> 
+    <!-- 默认内容，若父组件没设置内容，显示此内容 -->  
     </slot>  
 </a>  
 export default{  
@@ -238,21 +268,54 @@ export default{
 ```  
 
 **作用域插槽**  
-* 父组件从插槽data中获取值，`<template v-slot="s">s.slotData.url</template>`  
+* 父组件从子组件插槽中获取数据  
+* 子组件将要传递的内容绑定到slot上，父组件中用v-slot定义一个值接收插槽的名字  
+```js  
+<SlotDemo :url="website.url">  
+    <template v-slot:default="slotProps">  // slotProps就代表了子组件中的插槽  
+        {{slotProps.userData.name}}  
+    </template>  
+</SlotDemo>  
+// 注：default可省略，当提供的内容只有slot内容时，v-slot才可绑定在子组件上，省略template  
 
+// 子组件中  
+<a :href="url">  
+    <slot :userData="user">  // 绑定要传递的数据  
+        默认内容  
+    </slot>  
+</a>  
+export default{  
+    props: ['url']  
+    data(){  
+        return {  
+            user:{  
+                name: 'z',  
+                age: 25  
+            }  
+        }  
+    }  
+}  
+```  
+**具名插槽**  
+* 一个组件中需要多个插槽时，在slot中添加name属性  
+* 父组件中使用v-slot绑定name属性，即可正确按顺序插入  
 
 ### 动态组件  
-
+* :is="comonentName"  
+* 根据数据，动态渲染组件，即要加载的组件类型不确定，如新闻流。  
+* 如v-for遍历中，首先得到组件的类型数据，然后再得到其他数据渲染出来。  
 
 ### 异步组件  
-异步加载组件，意思是当需要使用时再加载组件，主要用到import()函数  
+* 异步加载组件，意思是什么时候用到，什么时候再加载组件  
+* 主要用到import()函数，一般用于较大组件的加载  
 ```js  
+// 在coponents属性中引入属性时，用import()  
 components:{  
     FormDemo: () => import('路径')  // 采用这种import方式  
 }  
 ```  
 
-**缓存组件:keep-alive**  
+### 缓存组件:keep-alive  
 * 频繁切换时，不需要重复渲染  
 * 将需要缓存的组件使用`<keey-alive><component></component></keey-alive>`包裹  
 * 框架层级，Vue控制js对象（跟v-show区别）  
@@ -357,7 +420,7 @@ store.state.b   // moduleB的状态
 * 用于组件中批量使用vuex中的getter属性  
 * 在组件中引入mapGetters，将其展开混入computed对象中  
 ```js  
-import {mapGetters} form 'vuex'  
+import { mapGetters } form 'vuex'  
 export default{  
     computed:{  
         ...mpaGetters(['total', 'count'])  
@@ -368,7 +431,7 @@ export default{
 * 在组件中重复使用mutation  
 * 使用mapMutations辅助函数  
 ```js  
-import {matMutations} from 'vuex'  
+import { mapMutations } from 'vuex'  
 methods:{  
     ...mapMutations({  
         setNumber: 'SET_NUMBER'  
@@ -384,7 +447,7 @@ methods:{
 * 接收参数不同，mutation第一个参数是state，action第一个参数为context（上下文）  
 ```js  
 // actions提交  
-this.store.diaptch('ACTION_NAME', data)  
+this.$store.diaptch('ACTION_NAME', data)  
 
 // mutations提交  
 this.$store.commit('SET_NUMBER', 10)  
@@ -416,15 +479,9 @@ computed:{
 }  
 ```  
 
-
 ### Vue-router  
 * 路由模式（hash，H5 history）  
 * 路由配置（动态路由、懒加载）  
-
-**路由模式**  
-* hash模式（默认），如http://abc.com/#/user/10  
-* H5 history，如http://abc.com/user/20，mode:'history'  
-* 后者需要server端配置  
 
 **基本使用**  
 1. 安装后在main.js中引入VueRouter组件  
@@ -434,13 +491,13 @@ computed:{
 5. 在App.vue中使用路由`<router-view></router-view>`  
 ```js  
 export default new Router({  
-    mode: 'history',  
+    mode: 'history',  // 默认为hash  
     routes:[  
         ...authentication,  // 其他js文件中定义的路由数组  
         {  
             path: '/',  
             name: 'home',  
-            component: () => import(@/Index.vue)  
+            component: () => import(@/Index.vue)  // 懒加载  
         },  
         {  
             path: "/productintro",  
@@ -456,7 +513,7 @@ export default new Router({
 ```  
 
 **动态路由**  
-* 在router目录下的index.js文件中，对path属性加上/:id。使用router对象的params.id获取动态参数  
+* 在router目录下的index.js文件中，对path属性加上`/:id`。使用router对象的params.id获取动态参数  
 ```js  
 const User = {  
     // 获取参数如 10 20  
@@ -630,27 +687,52 @@ const request = function ({ url, params, config, method }) {
 
 ### Vue响应式  
 Vue响应式：组件data数据一旦变化，则立刻触发视图更新  
+**响应式过程**  
+
+![vue-reactive](@alias/vuereactive.png)  
+**总结：**    
+* 任何一个vue组件上都有一个Watcher实例。  
+* vue中的data中的数据会被添加getter和setter属性。  
+* 当组件的render函数执行时，data中的getter方法会被调用，此时vue会记录此组件所依赖的所有data（依赖收集）。  
+* data变化时，setter方法被调用，vue会通知所有依赖于该数据的组件去调用他们的render函数进行更新。  
+
+**原理**  
 * 核心API - Object.defineProperty  
+* 使用Observer对数据进行劫持和深度监听，若传入的data是一个对象，则对data进行深度递归，添加setter和getter  
+* getter中Dep实例会调用dep.append方法收集依赖，把当前渲染的Watcher记住  
+* setter中设置新值，Dep会调用dep.notify方法通知之前记住的Watcher进行视图更新  
+
+**如何监听数组的变化？**  
+* 调用另一套机制 —— 重写Array原型方法  
+* 首先拷贝数组的原型，然后在自己创建的原型对象中重写7个会改变数组本身的方法，如push、pop、splice等，在重写的方法中首先调用原Array方法改变数组，然后加入一个视图更新的逻辑，即可更新视图  
+* 最后更改数据的原型链，执行方法时会执行自己重写的方法，里面添加了更新视图的逻辑  
+
+**实现**  
+使用Object.defineProperty实现对象的深度监听，  
+使用重写原型的方法实现数组监听：  
 ```js  
-// 更新视图  
+// 更新视图逻辑  
 function updataView(){  
     console.log('更新视图')  
 }  
 
-// 重新定义数组原型  
+// (1) 拷贝数组原型  
 const oldProto = Array.prototype  
-// 创建新对象，原型指向Array.prototyp，扩展新方法不影响原型  
-const arrProto = Object.create(Array.prototype);  
+// (2) 创建新对象，原型指向Array.prototyp，扩展新方法不影响原型  
+const arrProto = Object.create(oldProto);  
+// (3) 重写会改变数组本身的方法  
 ['push', 'pop', 'shift', 'unshift'].forEach((method) => {  
     arrProto[method] = function(){  
-        // 重写的方法里面加上一个视图更新  
-        updataView()  
-        oldProto[method].call(this, ...arguments)  
+       Array.prototype.method.apply(this, arguments)  
+       
+       // 重写的方法里面加上一个视图更新逻辑  
+       updataView()  
     }  
 })  
 
+// 2. 给data中数据添加getter和setter  
 function defineReactive(target, key, value){  
-    // 深度监听  
+    // 3. 深度监听（适用数组）  
     Observer(target, key)  
 
     Object.defineProperty(target, key, {  
@@ -659,7 +741,7 @@ function defineReactive(target, key, value){
         },  
         set: function(newVal){  
             if(newVal != value){  
-                // 深度监听  
+                // 3. 深度监听  
                 Observer(target, key)  
                 // 设置新值  
                 value = newVal  
@@ -672,15 +754,18 @@ function defineReactive(target, key, value){
 
 }  
 
+// 1. 数据劫持，将属性变为响应式  
 function Observer(target, key){  
     if(typeof(target) !== 'object' || target == null)  
         // 不是对象或数组  
         return target  
 
-    if(Array.isArray(target))  
+    // (4) 监听数组  
+    if(Array.isArray(target)){  
         target.__proto__ = arrProto  
+    }  
     
-    // 重新定义各个属性  
+    // 遍历属性，添加getter和setter  
     for(let key in target){  
         defineReactive(target, key, target[key])  
     }  
@@ -692,36 +777,37 @@ const data = {
     info: {  
         address: 'Shanghai'  // 需要深度监听  
     }  
-    nums: [10, 20, 30]  
+    nums: [10, 20, 30]  // 数组  
 }  
 Observer(data)  
 
 data.info.address = 'Shenzhen'  // set中也需要深度监听，才能正确赋值  
+data.nums.push(50)  // 监听数组  
 data.x = '100'  // 新增属性，无法监听，需要使用Vue.set  
 delete data.name  // 删除属性，无法监听，Vue.delete(data.name)  
 ```  
 
 **Object.defineProperty缺点**  
 * 深度监听需要递归到底，一次性计算量大  
-* 无法监听新增/删除属性（Vue中用Vue.set和Vue.delete实现）  
+* 无法监听新增/删除属性（Vue中用Vue.set和Vue.delete实现正确监听）  
 * 无法原生监听数组，需要特殊处理  
 
 
 ### 虚拟DOM和diff算法  
 * v-dom是实现vue和React的重要基石  
 * diff算法是v-dom中的核心  
-* DOM操作非常耗时  
-* 数据驱动视图，如何有效控制DOM操作  
+* 由于DOM操作非常耗时，使用数据驱动视图，有效控制DOM操作  
 
 **解决方案：**  
-* 将计算转换为js计算，因为js执行速度较快  
-* v-dom：用js模拟DOM结构，计算出最小的变更，再操作DOM  
+* 将DOM的一些操作转换为JS计算，因为JS执行速度较快  
+* v-dom：使用JS对象模拟DOM结构  
+* diff算法：通过JS计算出最小的变更，再操作DOM  
 
 **v-dom：**  
-* 用JS模拟DOM结构（vnode)  
-* 新旧vnode对比，得到最小的更新范围，最后更新DOM  
-* 数据驱动视图的模式下，有效控制DOM操作  
- 
+* 用JS模拟DOM结构（vnode)，然后构建一个真正的DOM树插到文档中  
+* 状态变更后，重新构造一颗新的对象树，然后和旧的vnode比较，记录差异  
+* 只把差异部分应用到第一步中真正的DOM树上，视图更新  
+* 算法实现：根据DOM结构createElement，然后使用setAttribute添加属性，appendChild添加子节点等  
 ```html  
 <!-- 用JS模拟DOM结构   -->  
 <div id="div1" class="container">  
@@ -732,6 +818,7 @@ delete data.name  // 删除属性，无法监听，Vue.delete(data.name)
 </div>  
 ```  
 ```js  
+// vNode  
 {  
     tag: 'div',  
     props: {  
@@ -761,22 +848,39 @@ delete data.name  // 删除属性，无法监听，Vue.delete(data.name)
 ```  
 
 **diff算法**  
-* 只比较同一层级，不跨级比较  
-* tag不相同，则直接删掉重建，不再深度比较  
+* 逐层对比，只比较同一层级，不跨级比较  
+* tag（标签名）不相同，则直接删掉重建，不再深度比较  
 * tag和key，两者都相同，则认为是相同节点，不再深度比较  
 * 因此，时间复杂度被优化到O(n)  
 
-* pathchVnode  
-* addVnodes  removeVnodes  
-* updateChildren  
+![diff](@alias/diff.png)
+**过程：**  
+* 调用patch函数，接收新旧虚拟节点为参数进行比较，然后局部更新真实DOM  
+* patch函数中首先判断两个节点是否值得比较（sameVnode），若值得比较则执行patchVnode  
+* 若两者都有子节点，则执行updateChildren比较子节点  
 
-生成vnode：  
-* 传入selector、data、children、ele  
-* 返回一个对象  
+**函数说明：**  
+patch：  
+* 新旧vnode比较，若不值得比较，则移除旧节点，创建新节点插入，最终返回一个vnode  
 
-pathch函数：  
+sameVnode：  
+* 比较tag和key值  
+* 判断是否为注释节点或者type信息等等  
+* 若不值得比较则直接用vnode替换oldVnode  
 
-为什么v-for中需要key？  
+patchVnode：  
+* 找到真实DOM，判断新旧vnode是否指向同一个对象，是的话直接return  
+* 若都有文本节点且不相等，则替换为新vnode的文本节点  
+* 若只有一个有子节点，则根据情况删除或者添加子节点  
+* 若都有子节点，则执行updateChildren函数比较子节点  
+
+updateChildren：  
+* 将新旧vnode的子节点提取出来，如Vch和oldCh  
+* 子节点都有两个头尾变量startIdx和endIdx，相互比较，共4种比较方式，分情况处理  
+* 子节点sameVnode成功后会接着执行patchVnode，然后层层递归下去，直到对比完成  
+
+
+**为什么v-for中需要key？**  
 * 不使用key则更新时需要将旧节点全部删除，再插入新节点  
 * 使用key可以将相同的节点保留，移动位置，只需要创建不同的节点插入  
 * 更加快速高效  
@@ -784,43 +888,49 @@ pathch函数：
 
 ### 模板编译  
 * 模板编译为render函数，执行render函数返回vnode  
-* 基于vnode再指向patch和diff  
+* 基于vnode再执行patch函数  
 * 使用webpack vue-loader，会在开发环境下编译模板  
 
 
-**组件 渲染/更新过程**  
+**组件的渲染/更新过程**  
 一个组件渲染到页面，修改data触发视图更新  
 * 响应式：监听data属性getter和setter  
 * 编译模板：模板到render函数再到vnode  
-* v-dom：patch(ele, vnode)  patch(vnode, newVnode)  
+* v-dom：patch(ele, vnode)（第一次）, patch(vnode, newVnode)（更新）  
 
-初次渲染过程：  
+**初次渲染过程：**  
 * 解析模板为render函数（或在开发环境已完成，vue-loader）  
 * 触发响应式，监听data属性getter setter  
 * 执行render函数，生成vnode，patch(elem, vnode)  
 
-更新过程：  
+**更新过程：**  
 * 修改data，触发setter（此前在getter中已监听）  
 * 重新执行render函数，生成newVnode  
 * patch(vnode, newVnode)  
 
-异步渲染：  
+**异步渲染：**  
 * $nextTick  
 * 汇总data的修改，一次性更新视图  
 * 减少DOM操作次数，提高性能  
 
 ### 前端路由原理  
-复杂一点的SPA都需要路由  
-**hash特点**  
-* hash变化会触发网页跳转，即浏览器前进、后退  
-* hash变化不会刷新页面，SPA必备的特点  
-* hash永远不会提交到server端  
-* window.onhashchange  
+* 前端路由本质就是监听URL的变化，然后匹配路由规则，显示相应的页面，并且无需刷新
+* hash路由：通过onhashchange事件监听url中hash的变化，若刷新则不会触发，可以使用load事件，若跳转则触发hashchange事件
+* H5 history路由：监听url中的路径变化，需要客户端和服务端的共同支持，更加美观
+* 前端路由跳转不刷新页面，后端路由一定会刷新页面  
 
-**H5 history**  
-* 用url规范的路由，且跳转时候不刷新页面  
-* history.pushState  
-* window.onpopstate  
+**1. hash路由**  
+* 如http://localhost/hash.html#/home，存在一个#符号，vue默认hash模式  
+* 页面中的hash发生变化时，会触发hashchange事件，网页跳转，但不刷新页面  
+* 使用location.hash可以获取hash值  
+* hash不会提交到服务端  
+
+**2. history路由**  
+* 如http://localhost/home  
+* 跳转时也不刷新页面，需要后端配合，后端统一返回一个index.html页面  
+* 所以前端路由需要覆盖所有的路由情况，并默认返回一个404页面  
+* history.pushState(obj, title, url)：前进到指定url，不刷新页面  
+* window.onpopstate()：浏览器前进或后退时触发  
 
 **选择**  
 * to B的系统推荐用hash，简单易用，对url规范不敏感  
@@ -829,7 +939,7 @@ pathch函数：
 
 ## Vue3  
 * 全部使用TS重写（响应式、v-dom、模板编译等）  
-* 性能升级，代码了减少  
+* 性能升级，代码量减少  
 * 部分API调整  
 
 ### Proxy  

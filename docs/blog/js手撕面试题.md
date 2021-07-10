@@ -6,6 +6,7 @@ categories:
 tags:  
  - js  
  - code  
+ - 面试  
 ---  
 
 ## 1. 实现 new 操作符  
@@ -52,20 +53,18 @@ instanceof用来判断引用类型的类型，用法：`obj instanceof Object`
 */  
 function _instanceof(obj, Func){  
     // 获取 Func的原型对象  
-    let Obj = Func.prototype;  
+    let Proto = Func.prototype;  
     // 获取实例对象的原型链对象  
     let proto = obj.__proto__;  
 
-    while(true){  
-        // 找到Object.prototype.__proto__还没有，返回false  
-        if(proto === null)  return false;  
-
-        // obj 的__proto__指向该原型对象  
-        if(proto === Obj)  return true;  
+    while(proto != null){  
+        if(proto === Proto)  
+            return true;  
         
-        // 沿着原型链寻找  
+        // 沿着对象的原型链寻找  
         proto = proto.__proto__;  
     }  
+    return false  
 }  
 
 car instanceof Car  
@@ -75,12 +74,12 @@ _instanceof(car, Car);
 
 ## 3. 实现 call() 方法  
 `call()`用来改变函数执行的作用域，即this指向，简单来说就是执行原函数，但是作用域改变，后面的参数逐个传入，并立即执行。  
-实现：
-* 给新对象内部添加一个方法属性，该函数即为原函数
+实现：  
+* 给新对象内部添加一个方法属性，该函数即为原函数  
 * 根据传入的参数执行原函数方法，得到结果后再删除该属性，返回结果。  
 ```javascript  
 /**  
- * context：要指向的对象
+ * context：要指向的对象  
  * args：传入的参数序列，...将其转换为数组  
  */  
 Function.prototype.call = function(context, ...args){  
@@ -138,14 +137,14 @@ Function.prototype.bind1 = function(context){
     }  
 }  
 
-// equals to
-Function.protytype.bind2 = function(context, ...params){
-    let _this = this;
-    return function(...args){
-        // 拼接初始参数和后来传入的参数
-        return _this.apply(context, parmas.concat(args))
-    }
-}
+// equals to  
+Function.protytype.bind2 = function(context, ...params){  
+    let _this = this;  
+    return function(...args){  
+        // 拼接初始参数和后来传入的参数  
+        return _this.apply(context, parmas.concat(args))  
+    }  
+}  
 
 // 调用  
 function fn1(a, b){  
@@ -157,33 +156,33 @@ const fn2 = fn1.bind1({x: 1}, 10, 20)
 fn2();  
 ```  
 ## 6. 实现继承  
-使用ES6实现继承：
-* extends方法继承父类属性
-* super中调用父类构造方法
-```js
-class Animal{
-    constructor(number){
-        this.number = number
-        this.type = 'animal'
-    }
+使用ES6实现继承：  
+* extends方法继承父类属性  
+* super中调用父类构造方法  
+```js  
+class Animal{  
+    constructor(number){  
+        this.number = number  
+        this.type = 'animal'  
+    }  
 
-    print(size){
-        console.log(`${this.type} is ${size}`);
-    }
-}
+    print(size){  
+        console.log(`${this.type} is ${size}`);  
+    }  
+}  
 
-class Cat extends Animal{
-    constructor(number, food){
-        super(number)
-        this.type = 'cat'
-        this.food = food
-    }
+class Cat extends Animal{  
+    constructor(number, food){  
+        super(number)  
+        this.type = 'cat'  
+        this.food = food  
+    }  
 
-    newPrint(){
-        console.log('newPrint')
-    }
-}
-```
+    newPrint(){  
+        console.log('newPrint')  
+    }  
+}  
+```  
 
 
 ## 7. 实现一个防抖函数  
@@ -200,15 +199,15 @@ function debounce(func, wait = 500){
     let timer = null  // 设置timer计时器  
 
     // params为执行函数参数  
-    return function(...params){  
+    return function(){  
         // 如果定时器有值，则清除定时器并置为空重新计时  
         if(timer){  
             clearTimeout(timer);  
-            timer = null;  
         }  
         // 延迟执行函数，并用timer计时  
         timer = setTimeout(() => {  
-            func.call(this, ...params)  // 此时this指向返回的匿名函数  
+            func.call(this, ...arguments)  // 此时this指向返回的新的函数  
+            timer = null   // timer需要清空  
         }, wait)  
 
     }  
@@ -228,19 +227,19 @@ var dprint = debounce(print(name){
 比如点击按钮触发事件，设定节流时间为1000ms，当我持续点击按钮时，每隔至少1000ms才会执行一次时间处理函数。  
 效果：频繁触发中减少执行频率  
 ```js  
-function throttle(func, delay){  
-    // 记录当前执行时间  
-    let preTime = 0  
+function throttle(func, delay = 100){  
+    let timer = null  
     
     return function(...params){  
-        let nowTime = Date.now();  
-        if(nowTime - preTime >= delay){  
-            preTime = nowTime  
-            func.call(this, ...params)  
+        if(timer){  
+            return  
         }  
+        timer = setTimeout(() => {  
+            func.apply(this, params)  
+            timer = null  
+        }, delay)  
     }  
 }  
-
 ```  
   
 ## 9. 实现 Object.create  
@@ -249,22 +248,55 @@ Object.create()就是以传入的对象作为原型，创建新的对象并返�
 /**  
 * proto：传入的对象，作为原型  
 */  
-function create(proto, properties = {}) {
-    let newObj = {};
-    newObj.__proto__ = proto;  // 链接原型
+function create(proto, properties = {}) {  
+    let newObj = {};  
+    newObj.__proto__ = proto;  // 链接原型  
 
-    // newObj上无其他属性
-    Object.defineProperties(newObj, properties);
-    return newObj;
-}
+    // newObj上无其他属性  
+    Object.defineProperties(newObj, properties);  
+    return newObj;  
+}  
 ```  
 
 ## 10. 实现一个浅拷贝  
 浅拷贝是创建一个新对象，拷贝原对象的属性和值，如果属性为基本数据类型，则拷贝值，如果为引用数据类型，则拷贝的是一个引用地址，简单来说，新旧对象共享同一块内存，改变其中一个引用，会影响到另一个引用数据类型。  
+**object.assign实现**  
+```js  
+const obj = {  
+    a: 10  
+}  
 
+const copy = Object.assign({}, obj)  
+```  
+**slice实现**  
+```js  
+const arr = [1, 2, [3, 4]]  
+
+const copy = arr.slice()  
+```  
 
 ## 11. 实现一个深拷贝  
 深拷贝是从堆内存中开辟一个新的区域存放新对象，完整拷贝原对象，修改新对象不会影响原对象。  
+**JSON方法**  
+```js  
+const copy = JSON.parse(JSON.stringify(obj))  
+```  
+**递归实现**  
+```js  
+function deepClone(obj){  
+    if(obj == null || obj !== 'object')  
+        return obj;  
+    
+    let clone = Array.isArray(obj) ? [] : {}  
+    for(let key in obj){  
+        if(obj.hasOwnProperty(key)){  
+           clone[key] = typeof(obj[key]) == 'object' ? deepClone(obj[key]) : obj[key]   
+        }  
+    }  
+
+    return clone  
+}  
+```  
 
 
 
@@ -276,7 +308,7 @@ const PNEDING = 'pending'
 const RESOLVED = 'resolved'  
 const REJECTED = 'rejected'  
 
-function promise(fn){  
+function Promise(fn){  
     // 保存初始状态  
     var self = this  
 
@@ -294,7 +326,7 @@ function promise(fn){
     // 状态转变为resolve方法  
     function resolve(value){  
         // 判断传入元素是否为一个Promise，若是则状态改变需要等待前一个状态改变完成  
-        if(value instanceof promise){  
+        if(value instanceof Promise){  
             return value.then(resolve, reject)  
         }  
 
@@ -340,15 +372,13 @@ function promise(fn){
 }  
 
 // then方法  
-promise.prototype.then = function(onResolved, onRejected){  
+Promise.prototype.then = function(onResolved, onRejected){  
     // 首先判断两个参数是否为函数类型  
-    onResolved =  
-        typeof onResolved === 'function' ?  
-            onResolved : function(value){ return value }  
+    onResolved =  typeof onResolved === 'function' ?  
+                  onResolved : function(value){ return value }  
     
-    onRejected =  
-        typeof onRejected === 'function' ?  
-            onRejected : function(error){ throw error }  
+    onRejected =  typeof onRejected === 'function' ?  
+                  onRejected : function(error){ throw error }  
     
     // 如果是等待状态，则将函数加入对应列表中  
     if(this.state === PENDING){  
@@ -366,7 +396,7 @@ promise.prototype.then = function(onResolved, onRejected){
 }  
 ```  
 
-**Promise.all()**  
+### Promise.all()  
 ```js  
 Promise.all = function(iterator){  
     if(!Array.isArray(iterator))  return;  
@@ -375,21 +405,20 @@ Promise.all = function(iterator){
     return new Promise((resolve, reject) => {  
         for(let item of iterator){  
             Promise.resolve(item)  
-        }  
-        .then(data => {  
-            res[count++] = data;  
-            if(count === iterator.length){  
-                resolve(res);  
-            }  
-        })  
-        .catch(e => {  
-            reject(e);  
-        })  
+            .then(data => {  
+                res[count++] = data;  
+                if(count === iterator.length)  
+                    resolve(res)  
+            })  
+            .catch(err => {  
+                reject(err)  
+            })  
+        }   
     })  
 }  
 ```  
 
-**Promise.race()**  
+### Promise.race()  
 ```js  
 Promise.race = function(iterator){  
     return new Promise((resolve, reject) => {  
@@ -407,7 +436,7 @@ Promise.race = function(iterator){
 ```  
 
 
-## 13. 实现一个发布-订阅模式  
+## 13. 实现一个发布-订阅模式（即观察者模式）  
 发布-订阅就是就是一个消息队列传送机制，订阅了某个事件的对象当该事件发布时（即发生时）会接收到相应的消息，然后执行对象中的回调函数。例如，当一些对象订阅了登录事件，则登录事件发生后，触发消息，然后就会执行所有订阅了登录事件的函数。  
 所以，发布-订阅要实现一个订阅函数`on()`和一个发布函数`emit()`。当发布时，执行所有订阅了其消息的函数。  
 ```js  
@@ -429,7 +458,7 @@ class EventEmitter{
     // 触发事件对应的方法  
     emit(eventName){  
         // 遍历执行所有的事件  
-        this.events[eventName].forEach(fn => fu())  
+        this.events[eventName].forEach(fn => fn())  
     }  
 }  
 ```  
@@ -449,7 +478,7 @@ var curryAdd = curry(add);
 curryAdd(2)(3);  // 5  
 ```  
 函数柯里化本质就是创建一个闭包，保存参数，当参数数量达到函数执行要求时，执行函数。  
-实现：  
+**实现：**  
 ```js  
 function curry(fn){  
     // 得到剩余的参数  
@@ -474,25 +503,28 @@ let arr = [
     12  
 ];  
 
-function flat(arr){  
-    // 验证arr中，还有没有深层数组[1,2, [3,4]]  
-    const isDeep = arr.some(item => item instanceof Array)  
-    if(!isDeep){  
-        return arr  // 已经扁平，直接返回  
-    }  
-    
-    // 主要依靠concat可以先拼接数组，扁平化一层  
-    const res = Array.prototype.concat.apply([], arr)  
-    return flat(res)  // 递归  
-}  
-
 const a = flat(arr); // [1,3,5,6,7,7,8,9,11,12]，不改变原数组  
-console.log(a)  
 ```  
-### (1)递归实现  
+### （1）递归+concat  
+* concat在连接数组时可以降低一维，再使用递归可以一直给数组降维  
+```js  
+function flat(arr){  
+    // 判断arr中还有没有深层数组，如[1,2,[3,4]]  
+    const isDeep = arr.some(item => item instance of Array)  
+    if(!isDeep)  
+        return arr   // 已经扁平化，直接返回  
+
+    // 使用concat对数组进行降维  
+    const res = Array.prototype.concat.apply([], arr)  
+    
+    // 使用递归不断降维  
+    return flat(res)  
+}  
+```  
+### （2）递归+自定义函数  
 循环数组中的每一个元素，判断该数组是否为数组，如果是数组，则循环遍历该数组，否则直接将元素添加到新数组中。  
 ```js  
-function myFlat(){  
+Array.prototype.myFlat = function (){  
     // 保存this，即原数组arr  
     let _this = this;  
     let newArr = [];  // 操作新数组，因此不改变原数组  
@@ -513,31 +545,29 @@ function myFlat(){
     cycle(_this); // 执行该函数  
     return newArr;  
 }  
-
-Array.prototype.myFlat = myFlat;  // 一定要添加到数组原型上，不然没法调用  
 ```  
-### (2)toString()实现  
+### （3）reduce()+concat()+递归  
+使用reduce()简化代码，实际还是递归调用  
 ```js  
 function myFlat(arr){  
-    // 将原数组展开  
-    const res = arr.toString().split(',');  
-    // 过滤掉空数组，然后将字符串转换为Number类型  
-    return result = res.filter(item => item !== "").map(Number);  
+    return arr.reduce((pre, cur) => {  
+        return pre.concat(Array.isArray(cur) ? myFlat(cur) : cur)  
+    }, []);  // []表示第一次迭代pre默认值为[]  
 }  
 
-// 注，这样写就直接调用  
-myFlat(arr);  
+// 注，这样写就直接调用函数  
+const newArr = myFlat(arr);  
 ```  
 
 ## 16. 基于Promise封装Ajax  
 Promise主要使用两种状态，resolve和reject，可以根据XHR对象的状态码来设置，然后返回Promise实例，基本思路如下：  
-（1）直接返回一个新的Promise实例（以下在实例中操作）  
-（2）创建一个XMLHttpRequest对象  
-（3）调用open()方法，设置url，与服务器建立连接  
-（4）监听Ajax状态信息onreadystatechange（注意要先设置监听再发送请求，否则可能收不到响应）  
-（5）当xhr.readyState == 4（服务器响应完成，可以获取其中数据了）  
-    * xhr.status == 200：服务器响应成功，置为resolve  
-    * xhr.status == 404：服务器响应失败，置为reject  
+1. 直接返回一个新的Promise实例（以下在实例中操作）  
+2. 创建一个XMLHttpRequest对象  
+3. 调用open()方法，设置url，与服务器建立连接  
+4. 监听Ajax状态事件onreadystatechange（注意要先设置监听再发送请求，否则可能收不到响应）  
+5. 当xhr.readyState == 4（服务器响应完成，可以获取其中数据了）  
+   * xhr.status == 200：服务器响应成功，置为resolve  
+   * xhr.status == 404：服务器响应失败，置为reject  
 ```js  
 function ajax(url, method){  
     return new Promise((resolve, reject) => {  
@@ -558,6 +588,12 @@ function ajax(url, method){
         xhr.send(null);  
     });  
 }  
+
+// 调用  
+const url = "/api/data/test"  
+ajax(url, 'Get')  
+    .then(res => console.log(res))  
+    .catch(err => console.log(err))  
 ```  
 ## 17. 实现一个sleep函数  
 等待一段时间，就去执行某个函数，基于Promise实现  
@@ -622,29 +658,244 @@ getPic(url).then(img => {
     console.log(err)  
 })  
 ```  
-
-## 20. 基于Promise手写一个简易ajax  
+## 20. 实现数组map方法  
+* map用于遍历数组，进行一些操作，最终返回一个新的数组，第二个参数为指定的this作用域，不指定则指向window  
+* 首先创建一个新的数组，然后执行传入的回调函数  
+* 回调函数的执行结果依次push进新的数组中，最后返回该数组  
 ```js  
-function ajax(url){  
-    return new Promise((resolve, reject) => {  
-        const xhr = new XMLHttpRequest();  
-        xhr.open('GET', url, true);  
-        xhr.onreadystatechange = function() {  
-            if(xhr.readyState === 4){  
-                if(xhr.status === 200){  
-                    resolve(JSON.parse(xhr.responseText))  
-                }  
-                else if(xhr.status === 404){  
-                    reject(new Error('404 not found'))  
-                }  
-            }  
-        }  
-        xhr.send(null)  // 不要忘记  
-    })  
+Array.prototype.myMap = function(fn, context){  
+    let newArr = []  
+    for(let i = 0; i < this.length; i++){  
+        result.push(fn.call(context, this[i], i, this))  
+    }  
+    return result  
+}  
+```  
+
+## 21. 实现数组filter方法  
+* filter用于遍历数组，寻找满足条件的元素，将它们塞进一个新的数组返回，第二个参数也是this指定的作用域  
+* 首先创建一个新的数组，然后遍历  
+* 根据条件判断元素，满足条件则push进数组，最后返回该数组  
+```js  
+Array.prototype.myFilter = function(fn, context){  
+    let newArr = []  
+    for(let i = 0; i < this.length; i++){  
+        let res = fn.call(context, this[i], i, this)  
+        if(res === true)  
+            newArr.push(res)  
+    }  
+
+    return newArr  
+}  
+```  
+
+## 22. 实现数组reduce方法  
+* reduce是归并方法，每次得到的pre为上一次执行后的结果，最终返回一个值  
+* 首先判断有没有传入第二个参数，即初始值，  
+* 然后迭代执行fn，不断更新结果，最后返回  
+```js  
+Array.prototype.myReduce = function(fn, initValue){  
+    // 初始值为空或数组长度为0  
+    if(initValue === undefined && this.length === 0){  
+        throw new Error('error')  
+    }  
+    // 更新result  
+    let result = initValue ? initValue : this[0]  
+    for(let i = initValue ? 0 : 1; i < this.length; i++){  
+        result = fn(result, this[i], i, this)  
+    }  
+
+    return result  
+}  
+```  
+## 23. 实现一个JSONP  
+```js  
+function handleResponse(data){  
+    console.log(`response data: ${data}`)  
 }  
 
-const url = '/data/test.json'  
-ajax(url)  
-.then(res => console.log(res))  
-.catch(err => console.log(err ))  
+var script = document.createElement('script')  
+script.src = 'http://..'  
+
+document.body.insertBefore(script, 某节点)  
 ```  
+
+## 24. 实现图片的懒加载  
+* 图片src默认先加载一个预览图或者一个loading占位图  
+* 图片原图放在自定义的标签属性data-src中（使用dataset.src访问）  
+* 监听当图片进入可视区域时，给src赋值，即data-src中的图片  
+* Element.getBoundingClientRect() 方法返回元素的大小及其相对于视口的位置  
+```js  
+function imgLoad(){  
+    let img = document.querySelectorAll("img")  
+    for(let i = 0; i < img.length; i++){  
+        if(img[i].getBoundingClientRect().top < window.innerHeight)  
+            img[i].src = img[i].dataset.src  
+    }  
+}  
+
+window.onload = imgLoad  
+window.onscroll = throttle(imgLoad)  // 要做一个防抖处理  
+```  
+## 25. 虚拟DOM的模拟  
+```js  
+class Element{  
+    constructor(tagName, attrs, children){  
+        this.tagName = tagName  
+        this.attrs = attrs || {}  
+        this.children = children ||[]  
+    }  
+    render(){  
+        // 生成真实DOM，最后会把return的结果添加到页面中  
+    }  
+}  
+```  
+## 26. CSS画三角形  
+* 宽度width为0，高度height为0  
+* 设置border长度和位置  
+```css  
+/* 如等腰三角形，其中border-top没有值，则border会以其他长度为准进行连接 */  
+#triangle{  
+    width: 0;  
+    height: 0;  
+    border-left: 50px solid transparent;  
+    border-right: 50px solid transparent;  
+    border-bottom: 100px solid red;  
+}  
+
+/* 扩展：画圆的话元素高度和宽度要相等，然后设置border-radius为50%即可 */  
+```  
+## 27. 洗牌算法  
+* 将数组随机打乱  
+* 实现：依次遍历数组元素，将当前元素和其他的元素中随机选择一个进行交换  
+```js  
+function shuffle(arr){  
+    for(let i = 0; i < arr.length; i++){  
+        // i + 向下取整（(0, 1) * 长度 - i）  
+        let random = i + Math.floor(Math.random() * arr.length - i)  
+        // 解构赋值  
+        [arr[i], arr[random]] = [arr[random], arr[i]]  
+    }  
+}  
+```  
+## 28. 数组与树结构的转化  
+```js  
+let data = [  
+    { id: 0, parentId: null, name: '生物'},  
+    { id: 3, parentId: 0, name: '微生物' },  
+    { id: 1, parentId: 0, name: '动物’ }  
+    { id: 2, parentId: 1, name: '大象'}  
+]  
+// 数组与树结构的相互转化  
+obj = {  
+    "id": 0,  
+    "parentId": null,  
+    "name": '生物',  
+    "children": [{  
+        "id": 1,  
+        "parentId": 0,  
+        "name": ‘动物',  
+        "children":[{  
+            "id": 2,  
+            "parentId": 1,  
+            "name": '大象'  
+        }],  
+        "id": 3,  
+        "parentId": 0,  
+        name: '微生物'  
+    }]  
+}  
+```  
+**数组转化为树结构**  
+* 对象数组需要按照id值排好序，每个对象id唯一，但是parentId可以相同  
+* 根据parentId找到父元素  
+```js  
+function transTree(data){  
+    let result = []  
+    let obj = {}  
+    if(!Array.isArray(data)){  
+        return []  
+    }  
+    data.forEach(item => {  
+        obj[item.id] = item    // 一次浅拷贝，使用其中数据  
+    })  
+    data.forEach(item => {  
+        let parent = obj[item.parentId]  
+        if(parent){  
+            // 如果有父元素，则将该元素放到父元素的children中  
+            (parent.children || (parent.children = [])).push(item)  
+        }  
+        else{  
+            result.push(item)  
+        }  
+        return result  
+    })  
+}  
+console.log(JSON.stringify(transTree(data)))  
+```  
+**树结构转化为数组**  
+bfs + 队列  
+```js  
+function transArr(obj){  
+    let queue = [obj]  
+    let data = []   // 返回结果  
+    while(queue.length !== 0){  
+        let item = queue.shift()  
+        data.push({  
+            id: item.id,  
+            parentId: item.parentId,  
+            name: item.name  
+        })  
+        let children = item.children  
+        if(children){  
+            for(let i = 0; i < children.length; i++){  
+                queue.push(children[i])  
+            }  
+        }  
+    }  
+    return data  
+}  
+console.log(transArr(obj))  
+```  
+## 29. 实现JSON.stringify  
+* 使用递归实现  
+```js  
+function Stringify(obj){  
+    if(typeof(obj) !== 'object')  
+        return obj.toString()  
+    let json = []  
+    // 判断传入的是对象还是数组  
+    let arr = Array.isArray(obj)   // true表示数组  
+    for(let key in obj){  
+        if(obj.hasOwnProperty(key)){  
+            let item = obj[key]  
+            if(typeof(item) === 'object')  
+                item = Stringify(item)  
+            json.push((arr ? "" : '"' + key + '":') + String(item))  
+        }  
+    }  
+    console.log(arr, String(json))  
+    // 根据类型添加[]或{}  
+    return (arr ? "[" : "{") + String(json) + (arr ? "]" : "}");  
+}  
+```  
+## 30. 实现url参数解析
+```js
+var url = 'www.u.com/home?id=2&type=0&dtype=-1';
+function parseUrl(url){
+    const result = []
+    let query = url.split("?")[1]
+    let queryArr = query.split("&")
+    
+    queryArr.forEach(item => {
+        let obj = {}
+        let key = item.split("=")[0]
+        let value = item.split("=")[1]
+        obj[key] = value
+        result.push(obj)
+    })
+
+    return result
+}
+console.log(parseUrl(url))
+```

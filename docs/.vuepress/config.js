@@ -65,7 +65,9 @@ module.exports = {
           ["classification", "算法分类"]
         ],
         "/project/":[
-          ["", "项目"]
+          ["", "项目"],
+          ["VSCode", "VSCode配置"],
+          ["manage", "Vue管理系统"]
         ],
         "/notes/": [
           ["", "笔记"],

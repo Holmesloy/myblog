@@ -270,3 +270,10 @@ socket.onmessage = funciton(event){
 * open：成功连接时触发  
 * error：发生错误时触发，连接不能持续  
 * close：连接关闭时触发  
+
+## axios
+* 基于Promise实现对原生XHR的封装
+* 从node.js创建http请求
+* 客户端支持防止CSRF（每个请求都携带一个cookie中的key，根据同源策略，假冒网站拿不到cookie，因此后台可以识别用户是否在假冒网站上，然后进行处理）
+* 提供并发请求的接口
+

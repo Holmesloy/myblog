@@ -3,11 +3,9 @@
 ## 浏览器渲染流程  
 1. 解析HTML，生成DOM树  
 2. 解析CSS，生成CSS规则树  
-3. 解析Javascript，主要通过DOM API和CSSOM API操作  
-4. 通过DOM树和CSS规则树来生成渲染树（渲染树与DOM树的区别如Header不放在渲染树中，或者display:none的元素等）。  
-5. 绘制render树  
-
- 
+3. 通过DOM树和CSS规则树来生成渲染树（渲染树与DOM树的区别如Header不放在渲染树中，或者display:none的元素等）
+4. 根据渲染树来布局，计算每个节点的位置
+5. 调用GPU绘制，合成图层，显示在屏幕上
 
 
 ## 错误处理与调试  
@@ -73,7 +71,7 @@ window.onerror = function(message, url, line){
 
 **(2) Application**  
 LocalStorage、SessionStorage、Cookie设置和删除  
-**(3) NetWork** 
+**(3) NetWork**  
 根据类型查看资源加载情况  
 **(4) Source**  
 存放着源代码，在代码中添加debugger或者在浏览器中手动点击添加，可以在浏览器原文件中打断点  
@@ -103,14 +101,15 @@ LocalStorage、SessionStorage、Cookie设置和删除
 
 ## JSONP  
 * `<script>`可绕过跨域限制  
-* 服务器可以任意动态拼接数据返回  
-* 所以，`<script>`就可以获得跨域的数据，只要服务器正确设置了数据  
+* 服务器可以任意动态拼接数据装进js格式文件中，供客户端调用  
+* 利用`<script>`向服务器请求，服务端数据放在一个方法中，跟随数据一起返回，由于这个方法会立即被浏览器执行，所以要先在浏览器端定义这个方法，才能正确执行处理数据。  
 
 JSON with padding（填充式JSON或参数式JSON），由两部分构成：回调函数和数据。回调函数是响应到来时的处理函数，而数据就是响应得到的JSON数据，传入回调函数中处理。  
 JSONP也可以通过动态`<script>`元素实现，使用时将其src属性指定一个跨域的URL，其不受限制从其他域来加载资源。  
 加载图片、css、CDN和js中使用的`<img/>`，`<link>`，`<script>`不受同源策略影响。  
 ```js  
-<script type="text/javascript">
+// 1. 动态传递  
+<script type="text/javascript">  
 // 处理函数  
 function handleResponse(response){  // response即为响应数据  
     alert("I am response data:" + response);  
@@ -118,12 +117,15 @@ function handleResponse(response){  // response即为响应数据
 
 var script = document.createElement("script");  
 script.src = "http://...";  // 设置src  
-// 插入到某处  
-document.body.insertBefore(script, ...);  
-</script>
+// 插入到某处去获取数据  
+document.body.insertBefore(script, 某节点);  
+</script>  
+
+// 2.直接传递：把浏览器定义的方法以参数的形式传递给服务端就是 callback=testFunction  
+<script type="text/javascript" src='http://xx:3000/users?callback=testFunction'></script>  
 ```  
 优点：简单易用且能直接访问响应文本。  
-缺点：从其他域中加载代码执行，若响应中夹杂恶意代码，则安全性得不到保证。另外，无法确定其请求是否失败，通常采用超时的办法进行检测是否接收到数据。  
+缺点：从其他域中加载代码执行，若响应中夹杂恶意代码，则安全性得不到保证。另外，无法确定其请求是否失败，通常采用超时的办法进行检测是否接收到数据。只支持get请求，因为要传过去callback参数。  
 
 ## 跨域资源共享（CORS）  
 实现CORS通信的关键是服务器,服务器需要实现CORS接口。  
@@ -219,7 +221,7 @@ JSONP只支持GET请求，CORS支持所有类型的HTTP请求。JSON支持老式
 * 根据CSS代码生成CSSOM  
 * 将DOM Tree和CSSOM结合形成Render Tree  
 * 根据渲染树渲染页面  
-* 遇到`<script>`则暂停渲染，优先加载并执行js代码，完成再继续渲染完成
+* 遇到`<script>`则暂停渲染，优先加载并执行js代码，完成再继续渲染完成  
 
 **为什么css放在head中？**  
 如果放在后面，可能造成一开始渲染时没有css，后来解析到css，又重新渲染  
@@ -242,9 +244,8 @@ document.addEventListner('DOMContentLoaded', function(){ // 用得更多
 * 减少CPU计算量，减少网络加载耗时  
 * 适用于所有编程的性能优化：空间换时间  
 
-雪碧图  
 **让加载更快**  
-* 减少资源体积：压缩代码，如压缩图片，webpack压缩代码等  
+* 减少资源体积：如压缩图片，webpack压缩代码等  
 * 减少访问次数：webpack合并代码，缓存，SSR服务器端渲染  
 * 使用更快的网络：CDN（根据区域选择服务器，也可以触发缓存机制）  
 
@@ -263,6 +264,7 @@ document.addEventListner('DOMContentLoaded', function(){ // 用得更多
 **SSR服务器渲染**  
 * 将网页和数据一起加载，一起渲染  
 * 非SSR（前后端分离）：先加载网页，再加载数据，再渲染数据  
+* SSR优点：利用SEO，页面渲染时间短。缺点：服务器压力过大，开发环境受限  
 
 **懒加载**  
 ```html  
@@ -305,7 +307,7 @@ function debounce(fn, delay = 500){
 
     return function(){  
         if(timer){  
-            clearTimeout(timer)  // 清除了定时器和任务
+            clearTimeout(timer)  // 清除了定时器和任务  
         }  
         timer = setTimeout(() => {  
             fn.apply(this, arguments)  
@@ -350,7 +352,7 @@ function throttle(fn, delay = 100){
         }  
         timer = setTimeout(() => {  
             fn.apply(this, arguments)  
-            timer = null   // timer不执行是不会重新赋值为null的
+            timer = null   // timer不执行是不会重新赋值为null的  
         }, delay)  
     }  
 }  
@@ -360,85 +362,149 @@ div1.addEventListner('drag', throttle(function(e) {
         console.log(e.offsetX, e.offsetY)  
 }, 200))  
 ```  
-### 安全    
+### Web安全    
 **XSS攻击**  
-举例：  
-* 一个博客网站，写一篇博客，其中嵌入`<script>`脚本  
-* 脚本内容：获取cookie，发送到我的服务器（服务器配合跨域）  
-* 发布这篇博客，如果有人查看，则可以获取访问者的cookie  
+跨站脚本攻击，即在浏览器中执行恶意脚本，从而拿到用户信息并操作，如窃取cookie，监听用户行为，获得账号和密码等。  
+类型：  
+* 存储型：恶意脚本存储到数据库，然后在客户端执行，如前端提交内容后返回页面中执行该脚本  
+* 反射型：恶意脚本作为网络请求的一部分，服务器获得请求参数，然后返回给浏览器执行  
+* 文档型：作为中间人角色，劫持网络数据包，修改其中的html文档，如wifi路由器劫持或本地恶意软件等  
 
-预防：  
-* http: only
-* 替换特殊字符，如 `<` 变为 `&lt;` ，`>` 变为 `&gt;`;  
-* 则`<script>`变为&lt;script&gt;，从而直接显示，不会作为脚本执行  
-* 前端要替换，后端也要替换  
+防范措施：  
+* 不相信用户的输入，即对用户输入进行转码或过滤，如替换特殊字符，对尖括号、斜杠进行转义，将 `<` 变为 `&lt;` ，`>` 变为 `&gt;`，则`<script>`变为&lt;script&gt;，从而直接显示，不会作为脚本执行  
+* 设置Cookie中的HttpOnly属性为true，则js无法读取Cookie的值  
 
 **CSRF跨站请求伪造攻击**  
+指攻击者诱导用户点击链接，打开黑客的网站，然后利用用户目前的登录状态发起跨站请求。  
 举例：  
-用户正在浏览网站，如淘宝，已经登陆，这时候收到攻击者的一封邮件，里面有一个链接，点击之后可能会发生一些操作，因为这时候带着用户的个人信息进入的该网站  
+用户正在浏览网站，如淘宝，已经登陆，这时候收到攻击者的一封邮件，里面有一个链接，点击之后可能会发生一些操作，因为这时候带着用户的个人信息进入的该网站，比如诱导用户点击发送get请求或者自动发送get、post请求，携带用户个人信息，让服务器误以为是一个正常的用户在进行操作  
+
+防范措施：  
+* 利用Cookie中的SameSite属性，使Cookie不随着跨站请求发送  
+* 验证来源站点，请求头中的Origin和Referer：其中Origin只包含域名信息，Referer包含了具体的URL路径，验证是否是正确网站  
+* CSRF Token：浏览器发起请求时，服务器生成一个字符串，植入返回的页面中，后序发送请求必须带上这个字符串进行验证，第三方站点无法拿到该token  
+
+**SQL注入**  
+利用操作系统的bug进行攻击，针对代码漏洞，通过SQL语句，实现无账号登录，甚至篡改数据库  
+过程：  
+* 寻找到SQL注入的位置  
+* 判断浏览器类型和后台数据库类型  
+* 针对不同的服务器和数据库特点进行SQL注入  
+
+防范措施：  
+* 检查变量数据类型和格式  
+* 过滤特殊符号  
 
 
-预防：  
-* 使用post接口  
-* 增加验证，例如密码、短信验证等  
+## 兼容性问题  
+### 样式兼容性（CSS）  
+**问题1：**  
+* 由于历史原因，不同浏览器标签的默认样式，如margin和padding不同  
+
+**解决方案**  
+* Normalize.css：CSS reset替代方案，修复了浏览器的一些bug，同时模块化，保留浏览器有用的默认值  
+* 将Normalize.css引入到css文件最上面，则样式冲突时自己写的样式会覆盖其值  
+* 另外，如果自己设置了CSS reset方案，也可以不使用Normalize.css  
+```css  
+/* 如使用通配符 */  
+* {  
+    margin: 0;  
+    padding: 0;  
+}  
+```  
+
+**问题2：**  
+* CSS3新属性，部分属性需要加上浏览器前缀兼容早期浏览器  
+* 如`transform, transition, border-radius, flex`等  
+
+|内核|浏览器|前缀|  
+|:--|:--|:--|  
+|Trident|IE浏览器|-ms|  
+|Gecko|Firefox|-moz|  
+|Presto|Opera|-o|  
+|Webkit|Safari|-webkit|  
+```css  
+-moz-     /* 火狐浏览器 */  
+-webkit-  /*Safari, 谷歌浏览器（之前）等使用Webkit引擎的浏览器 */  
+-o-       /*Opera浏览器(早期) */  
+-ms-      /*IE浏览器*/  
+```  
+**解决方案**  
+* 可以自己根据属性手动添加浏览器前缀  
+* 使用Webpack添加PostCSS，作为loader，然后添加autoprefixer插件  
+* 配置好loader和autoprefixer之后，CSS就会根据Can i use中的数据自动添加适应不同浏览器的CSS前缀  
+* Can i use（前端兼容性检查工具），可以查看ES6变量、CSS属性等在不同浏览器上的兼容性  
+
+**问题3：**  
+* IE9以下浏览器不能使用opacity属性  
+  
+**解决方案**  
+* filter滤镜属性：alpha(opacity = xx)  
+```js  
+ opacity: 0.5;  
+ filter: alpha(opacity = 50); //IE6-IE8我们习惯使用filter滤镜属性来进行实现  
+```  
 
 
-## 兼容性问题
-### 样式兼容性（CSS）
-* 由于历史原因，不同浏览器默认样式（如margin和padding）存在差异，开发时可以先设置reset.css，重置全局样式
-```css
-/* 如使用通配符 */
-* {
-    margin: 0;
-    padding: 0;
-}
-```
-* 目前仍有部分属性需要加上浏览器前缀进行兼容，如`transform, transition,border-radius,flex`等
+### 交互兼容性（Javascript）  
+**问题1：**  
+* 事件兼容性问题：可以封装一个适配器方法，过滤事件绑定、移除、冒泡阻止与默认事件的行为处理  
+```js  
+var  helper = {}  
 
-|内核|浏览器|前缀|
-|:--|:--|:--|
-|Trident|IE浏览器|-ms|
-|Gecko|Firefox|-moz|
-|Presto|Opera|-o|
-|Webkit|Safari|-webkit|
-```css
--moz-     /* 火狐浏览器 */
--webkit-  /*Safari, 谷歌浏览器等使用Webkit引擎的浏览器 */
--o-       /*Opera浏览器(早期) */
--ms-      /*IE浏览器*/
-```
+//绑定事件  
+helper.on = function(target, type, handler) {  
+    if(target.addEventListener) {  
+        target.addEventListener(type, handler, false);  
+    } else {  
+        target.attachEvent("on" + type,  
+            function(event) {  
+                return handler.call(target, event);  
+            }, false);  
+    }  
+};  
 
-### 交互兼容性（Javascript）
-* 事件兼容性问题：可以封装一个适配器方法，过滤事件绑定、移除、冒泡阻止与默认事件的行为处理
-```js
-var  helper = {}
+//取消事件监听  
+helper.remove = function(target, type, handler) {  
+    if(target.removeEventListener) {  
+        target.removeEventListener(type, handler);  
+    } else {  
+        target.detachEvent("on" + type,  
+        function(event) {  
+            return handler.call(target, event);  
+        }, true);  
+    }  
+};  
+```  
+**问题2：**  
+* 非Chrome浏览器获取scrollTop不能通过body.scrollTop获得  
+* 解决方法：通过document.documentElement.scrollTop兼容非Chrome浏览器  
+```js  
+var scrollTop = document.documentElement.scrollTop ||  
+                document.body.scrollTop;  
+```  
+**问题3：**  
+* new Date()构造函数的使用：类如'2020-08-08'的格式并不在各个浏览器中通用，使用new Date(str)有些无法正确生成日期对象  
+* 解决方法：使用以下日期格式 —— '2020/08/08'，new Date(str)即可  
 
-//绑定事件
-helper.on = function(target, type, handler) {
-    if(target.addEventListener) {
-        target.addEventListener(type, handler, false);
-    } else {
-        target.attachEvent("on" + type,
-            function(event) {
-                return handler.call(target, event);
-            }, false);
-    }
-};
+### 浏览器hack  
+* 不同浏览器或不同版本对CSS的解析不同，展示效果可能不同，因此需要针对不同浏览器或版本写特定的CSS样式，该过程即CSS hack  
+* 可以使用条件注释法，或首先判断浏览器的版本或方法，再进行样式书写等  
+```js  
+1. 判断IE浏览器版本（条件注释法）  
+ <!--[if IE 8]>  
+    // 代码块、html、css或js  
+  <![endif]-->  
+ <!--[if IE 9]> ie9 浏览器 <![endif]-->  
 
-//取消事件监听
-helper.remove = function(target, type, handler) {
-    if(target.removeEventListener) {
-        target.removeEventListener(type, handler);
-    } else {
-        target.detachEvent("on" + type,
-        function(event) {
-            return handler.call(target, event);
-        }, true);
-    }
-};
-```
-### 浏览器hack
-通过判断浏览器的种类来进行不同的处理：
-* IE：`<!--[if IE 9]> 我是IE9 <![endif]-->`
-* Safari：`var isSafari = /a/.__proto__=='//'`
-* Chrome：`var isChrome = Boolean(window.chrome)`
+2. 判断是否为Safari浏览器（在js中使用）  
+var isSafari = /a/.__proto__=='//'  
+
+3. 判断是否为Chrome浏览器  
+var isChrome = Boolean(window.chrome)  
+```  
+
+### 处理兼容性问题流程  
+* 考虑浏览器市场份额，产品受众  
+* 浏览器需要支持哪些效果  
+* 保证基本功能兼容性，再逐步向高级功能扩展  

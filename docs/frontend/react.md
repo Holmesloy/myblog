@@ -60,7 +60,7 @@ class EventDemo extends React.Component{
 
     // 1. event是React封装的，能够模拟DOM事件的全部能力  
     // 2. event.nativeEvent是原生事件对象  
-    // 3. 所有的事件，都被挂载到document上  
+    // 3. React17事件绑定到root组件上，有利于多个React版本共存  
     // 4. 和DOM事件不一样，和Vue事件也不一样  
     handleClick3 = (event) => {  
         event.preventDefault()  
@@ -107,13 +107,26 @@ List.propTypes = {
 
 ### setState  
 * 不可变值（不可直接修改state，赋值只能是新值）  
-* 直接使用时是异步  
+* 在一个事件处理函数中，多次调用setState会被合并，异步操作，最终渲染一次
 * 使用setState回调函数、或setTimeout、或自定义DOM事件中都是同步，可以直接拿到最新值  
-* 回调函数仅仅可以获取到当前修改后的state，再次执行setState方法获取到的state值依然为挂载后初始state值  
-* 可能会被合并  
+* 原理：能够命中batchUpdate即为异步，否则每次都会更新，即同步
 
 ```js  
+// 假设this.state.value = 0
+function eventHandler(){
+    this.setState({value:this.state.value + 1})
+    this.setState({value:this.state.value + 1})
+    this.setState({value:this.state.value + 1})
+}
+// 最终value值为1，因为每次调用时value都是初始值0，最后被调用的会覆盖之前的
 
+// 想要实现同步，则setState中传入一个函数，参数为preState和props
+function eventHandler(){
+    this.setState((preState) => {value:preState.value+1})
+    this.setState((preState) => {value:preState.value+1})
+    this.setState((preState) => {value:preState.value+1})
+}
+// 最终value为3，不能命中batchUpdate，所以每次都会触发重新渲染更新
 ```  
   
 **state**  
@@ -135,7 +148,7 @@ this.setState({
 })  
 --------------------------------------------------  
 console.log(this.state.count)   // 异步，拿不到新值  
-// 1. 如何拿到最新的值：使用setState的第二个参数  
+// 1. 如何拿到最新的值：传入一个函数，或者在第二个函数参数中获取  
 this.setState({  
     count: this.state.count + 1  
 }, () => {  
@@ -144,18 +157,14 @@ this.setState({
 })  
 
 // 2. setTimeout中setState是同步的  
-setTimeout(() => {  
-    this.setState({  
-        count: this.state.count + 1  
-    })  
+setTimeout(() => {    // 不能命中batchUpdate
+    this.setState({ count: this.state.count + 1 })  
     console.log(this.state.count)  // 可以直接拿到最新值  
 }, 0)  
 
 // 3. 自己定义的DOM事件也是同步的  
 clickHandler = () => {  
-    this.setState({  
-        count: this.state.count + 1  
-    })  
+    this.setState({ count: this.state.count + 1 })  
     console.log(this.state.count)  // 可以直接拿到最新值  
 }  
 componetDidMount(){  
@@ -168,27 +177,17 @@ componentWillUnmount(){
     document.body.removeEventListener('click', this.clickHandler);  
 }  
 -----------------------------------------------------  
-// 1. 传入对象，会被合并，执行结果只一次+1  
-this.setState({  
-    count: this.state.count + 1  
-})  
-this.setState({  
-    count: this.state.count + 1  
-})  
-this.setState({  
-    count: this.state.count + 1  
-})  
+// 1. 直接连续调用setState，会被合并，执行结果只一次+1  
+this.setState({ count: this.state.count + 1 })  
+this.setState({ count: this.state.count + 1 })  
+this.setState({ count: this.state.count + 1 })  
 
 // 2. 传入函数，不会被合并，执行结果+2  
 this.setState((preState, props) => {  
-    return {  
-        count: preState.count + 1  
-    }  
+    return { count: preState.count + 1  }  
 })  
 this.setState((preState, props) => {  
-    return {  
-        count: preState.count + 1  
-    }  
+    return { count: preState.count + 1 }  
 })  
 ```  
 
@@ -300,7 +299,7 @@ shouldComponentUpdate(nextProps, nextState){
 }  
 ```  
 **PureComponent和memo**  
-* SCU中实现了浅比较的SCU，优化性能，结合不可变值使用  
+* PureComponent中实现了浅比较的SCU，优化性能，结合不可变值使用  
 * memo：函数组件中的PureComponent  
 * 浅比较已适用大部分情况  
 ```js  
@@ -359,7 +358,7 @@ const HComponent2 = HOCFactory(Componnent2)
 * 用户发出Action：`store.dispatch(action)`
 * Store自动调用Reducer，传入两个参数：当前State和收到的Action。Reducer返回新的State：`let nextState = todoApp(preState, action)`
 * State若发生变化，Store会调用监听函数：`store.subscribe(listener)`
-* listner可以通过store.getState()得到当前状态，触发重新渲染View：`component.setState(store.getState())
+* listner可以通过store.getState()得到当前状态，触发重新渲染View：`component.setState(store.getState())`
 * dispatch(action)  
 * reducer -> newState  
 * subscribe触发通知  
@@ -367,9 +366,10 @@ const HComponent2 = HOCFactory(Componnent2)
 
 
 **react-redux**  
-* `<Provider>` connect  
-* connect  
-* mapStateToProps mapDispatchToProps  
+* `<Provider>`：嵌套在React组件的最外层，可以把state传给所有的组件（利用context）
+* 把React组件分为容器组件和UI组件两类，容器组件管理逻辑，UI组件管理显示效果，二者通过connect方法连接，容器组件一般由UI组件依据connect生成；
+* mapStateToProps()，存在于容器组件中，针对UI组件的各状态（依据state，或者父组件的props）生成；
+* mapDispatchToProps()：存在于容器组件中，针对UI组件中的各可能改变state的事件定义一系列的函数，依据props传给UI组件  
 
 ## React原理  
 ### 函数式编程  
@@ -401,8 +401,8 @@ const HComponent2 = HOCFactory(Componnent2)
 * 方便事件的统一管理（如事务机制）  
 
 ### setState和batchUpdate  
-* setState本身不锁雾异步还是同步  
-* 看是否能命中batchUpdate机制  
+* setState本身没有说异步还是同步  
+* 主要看是否能命中batchUpdate机制  
 * 判断isBatchingUpdates  
 
 **哪些能命中batchUpdate**  
@@ -436,6 +436,7 @@ indrease = () => {
 * JSX如何渲染为页面  
 * setState之后如何更新页面  
 
+过程：
 * props state  
 * render()生成vnode  
 * patch(elem, vnode)  
@@ -518,18 +519,18 @@ function ClickFunc(){
 使纯函数有了副作用，即造成一定的影响，如设置全局定时任务，用以实现生命周期。  
 * 模拟componentDidMount —— 依赖于[]  
 * 模拟componentDidUpdate —— 依赖于[a, b, c]  
-* 模拟componentWillUnMount —— 返回一个函数，依赖于[]  
+* 模拟componentWillUnMount —— hook中返回一个函数，依赖于[]  
 ```js  
 import React, { useState, useEffect } from 'react'  
 
 function LifeCycles(){  
 
-    // 同时模拟class组件的DidMount和DidUpdate  
+    // 1. 同时模拟class组件的DidMount和DidUpdate  
     useEffect(() => {  
         console.log('发送ajax请求')  
     })  
 
-    // 只模拟DidMount，第二个参数为空数组  
+    // 2. 只模拟DidMount，第二个参数为空数组  
     useEffect(() => {  
         console.log('加载完成')  
 
@@ -539,7 +540,7 @@ function LifeCycles(){
         }, 1000)  
 
         // 返回一个函数  
-        // 模拟WillUnMount  
+        // 3. 模拟WillUnMount，可以执行事件销毁等操作  
         return () => {  
             window.clearIntever(timerId)  
         }  

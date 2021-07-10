@@ -1,46 +1,75 @@
 # 笔记  
 
 ## 在线OJ输入输出  
-1. Java  
-   获取输入语句：`Scanner sc = new Scanner(System.in);`  
-   首先判断是否还有输入：`sc.hasNext()`  
-   `nextInt()`：获取整数  
-   `next()`：获取字符串（以空格或换行作为分隔符）   
-   `nextLine()`：获取字符串（以换行为间隔）  
-   `nextDouble()`：获取双精度数  
-   例子：连接用户输入的相邻两个字符串并输出  
-   ```java  
-   import java.util.Scanner;  
+**Java**  
+获取输入语句：`Scanner sc = new Scanner(System.in);`  
+首先判断是否还有输入：`sc.hasNext()` 、`sc.hasNextInt()`等  
+输入赋值：  
+`nextInt()`：获取整数  
+`next()`：获取字符串（以空格或换行作为分隔符）  x  
+`nextLine()`：获取字符串（以换行为间隔）  
+`nextDouble()`：获取双精度数  
+注：使用`hasNextxx()`需要与`Nextxx()`相对应。另外，如果使用了`nextInt()`，需要加上`sc.nextLine()`才能获取下一行，否则报错。  
+例1：连接用户输入的相邻两个字符串并输出  
+```java  
+import java.util.Scanner;  
 
-   public class Main{  
-       public static void main(String[] args){  
-           Scanner sc = new Scanner(System.in);  
-           while(sc.hasNext()){    // 判断是否还有输入的值  
-               String a = sc.next();  // 读取一个字符串  
-               String b = sc.next();  
+public class Main{  
+    public static void main(String[] args){  
+        Scanner sc = new Scanner(System.in);  
+        while(sc.hasNext()){    // 判断是否还有输入的值  
+            String a = sc.next();  // 读取一个字符串  
+            String b = sc.next();  
 
-               System.out.println(a + b);  
-           }  
-       }  
-   }  
-   ```  
-   运行结果：  
-   ```java  
-   输入：hello world ni hao  
-   // a首先为hello，b首先为world；然后a为ni，b为hao，得到以下两个结果  
-   helloworld  
-   nihao  
-   ```  
-2. Javascript  
-   牛客网使用`readline()`函数进行输入，将数据处理后再赋值  
-   ```javascript  
-   while(line = readline()){   // 判断是否还有下一个输入  
-       var lines = line.split('')  // 将字符串分割为单个字符组成的数组  
-       var a = parseInt(lines[0])  // a为数组第一个值  
-       var b = parseInt(lines[1])  
-       print(a + b)  
-   }  
-   ```  
+            System.out.println(a + b);  
+        }  
+    }  
+}  
+```  
+运行结果：  
+```java  
+输入：hello world ni hao  
+// a首先为hello，b首先为world；然后a为ni，b为hao，得到以下两个结果  
+helloworld  
+nihao  
+```  
+例2：多行输入获取：整数+字符数组+整数数组  
+```java  
+/* 输入为：
+5
+a db e m t
+1 0 13 21 2
+*/
+import java.util.Scanner;  
+
+public class Main{  
+    public static void main(String[] args){  
+        Scanner sc = new Scanner(System.in); 
+        int n = sc.nextInt();  // n = 5 
+        sc.nextLine();  // 注意这里要加nextLine()，以获取下一行
+        String[] s = new String[n];
+        int[] nums = new int[n];
+        for(int i = 0; i < n; i++){
+            s[i] = sc.next();   // 逐个获取字符串
+        }
+        
+        sc.nextLine();    // 继续下一行
+        for(int i = 0; i < n; i++){
+            nums[i] = sc.nextInt();  // 逐个获取整数
+        }
+    }  
+} 
+```  
+**Javascript**  
+牛客网使用`readline()`函数进行输入，将数据处理后再赋值  
+```javascript  
+while(line = readline()){   // 判断是否还有下一个输入  
+    var lines = line.split('')  // 将字符串分割为单个字符组成的数组  
+    var a = parseInt(lines[0])  // a为数组第一个值  
+    var b = parseInt(lines[1])  
+    print(a + b)  
+}  
+```  
 
 ## Java字符串、数组和集合类  
 ### 字符串String  
@@ -395,6 +424,7 @@ for(let i = 0; i < arr.length; i++){
 }  
 
 2.forEach(function(value, index, array))：遍历数组，无返回值，不改变原数组  
+// 注：forEach中不能使用break/continue，但可以使用return代替continue，同时不能直接给value赋新值  
 arr.forEach((value, index) => console.log(value, index));  
 
 3.map()：返回一个数组，不改变原数组，数组中的每一项都由return返回  
@@ -418,12 +448,14 @@ for(let prop in obj){  // 不能用of
 6.filter()：类似，返回一个数组，不改变原数组，返回的每一项都满足过滤条件  
 var arr1 = arr.filter((value) => value.includes("a"));  // arr1 = ["am", "array"]  
 
-7.reduce()：累加器，数组中每个值依次参与计算，最终返回一个值，不改变原数组  
+7.reduce()：归并方法，数组中每个值依次参与计算，最终返回的是一个值，不改变原数组  
+// 参数[fn(pre, cur, index, array){}, init]，pre表示上一个归并值  
+// reduce第二个参数init为pre的默认值，若不指定，则第一次迭代时pre为数组的第一项，cur为数组的第二项  
 var arr = [2, 3, 4, 1]  
-var total = arr.reduce((a, b) => a + b);  // total = 10  
-var b = arr.reduce(function(previousValue, currentValue, index, array){  
-    return previousValue - currentValue;  
-});  // b = -6, 参数分别为上一次的值、当前值、索引、原数组  
+var total = arr.reduce((a, b) => a + b, 1);  // total = 11，pre默认值为1  
+var b = arr.reduce(function(pre, cur, index, array){  
+    return pre - cur;  
+});  // b = 2-3-4-1 = -6, 参数分别为上一次的值、当前值、索引、原数组  
 ```  
 ### Map  
 * 键值对结构，查找速度较快  
@@ -452,6 +484,13 @@ s.add(key) ：插入某值
 s.delete(key) ： 删除某值  
 ```  
 注：Map和Set都是iterable类型，通常使用for...of循环或者forEach进行遍历。  
+
+### Math函数  
+* Math.abs()：取绝对值  
+* Math.ceil() and Math.floor：向上取整和向下取整  
+* Math.round()：四舍五入  
+* Math.random()：取[0, 1)的随机小数  
+* Math.max() and Math.min()：获取一组数据的最大值和最小值  
 
 ## int和Integer的转化  
 Integer是int的包装类，必须实例化后才能使用。另外，Integer实际上是对象的引用，new实际生成一个指针指向该对象，默认值为null，而int直接存储值，默认值为0。  
@@ -521,4 +560,19 @@ while(a != 0){
     a /= 10;  
 }  
 return res;  // -123  
+```  
+
+```js  
+console.log(num,str)  
+var num = 18;  
+var str = "lily";  
+function fn2(){  
+    console.log(str,num)  
+    num = 19;  
+    str = "candy";  
+    var num = 14;  
+    console.log(str,num)  
+}  
+fn2();  
+console.log(str,num)  
 ```  

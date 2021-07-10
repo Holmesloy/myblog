@@ -1,3 +1,6 @@
+# 常考算法
+
+## 链表
 ### 1. 反转链表  
 题目描述：输入一个链表，反转链表后，输出新链表。  
 思路：可以使用指针实现，也可以使用辅助栈实现，以下使用指针进行实现。使用三个辅助指针，cur，pre和next，cur表示当前结点，在循环中将指针转向，最后输出头指针。  
@@ -121,6 +124,10 @@ public class Solution {
 }  
 ```  
 
+## 二叉树
+### 二叉树的所有路径
+
+
 ### 5. 实现二叉树先序、中序、后序遍历  
 题目描述：分别按照二叉树先序，中序和后序打印所有的节点。  
 思路：使用List集合存储结点，经过遍历后将List集合转换为数组输出  
@@ -207,7 +214,7 @@ public class Solution {
     }  
 }  
 ```  
-### 7. 合并有序列表  
+### 7. 合并有序链表  
 题目描述：将两个有序的链表合并为一个新链表，要求新的链表是通过拼接两个链表的节点来生成的。  
 思路：首先取两个有序链表第一个数较小的那个作为头结点，然后在两个链表均不为空时进入循环判断两个链表值，头结点下一个结点指向其中较小的结点，依次拼接，最后直接拼接不为空的那个链表。  
 java实现：  
@@ -280,7 +287,9 @@ class Solution {
 如果反转后整数超过 32 位的有符号整数的范围 [−231,  231 − 1] ，就返回 0。  
 假设环境不允许存储 64 位整数（有符号或无符号）。  
 **方法：%和/**  
-本题重点在于溢出的处理，有两种方法：一种是使用long先存储结果，最后进行判断；另一种是在运算中使用中间值，若中间值溢出，直接返回，不必再运算。  
+本题重点在于溢出的处理，有两种方法：  
+* 一种是使用long先存储结果，最后进行判断；  
+* 另一种是在运算中使用中间值，若中间值溢出，直接返回，不必再运算。  
 ```java  
 class Solution {  
     public int reverse(int x) {  
@@ -313,6 +322,8 @@ class Solution {
     }  
 }  
 ```  
+
+## 数字
 ### 10. 0～n-1中缺失的数字  
 一个长度为n-1的递增排序数组中的所有数字都是唯一的，并且每个数字都在范围0～n-1之内。在范围0～n-1内的n个数字中有且只有一个数字不在该数组中，请找出这个数字。  
 输入: [0,1,2,3,4,5,6,7,9]  
@@ -345,7 +356,7 @@ class Solution {
 LRUCache(int capacity) 以正整数作为容量 capacity 初始化 LRU 缓存  
 int get(int key) 如果关键字 key 存在于缓存中，则返回关键字的值，否则返回 -1 。  
 void put(int key, int value) 如果关键字已经存在，则变更其数据值；如果关键字不存在，则插入该组「关键字-值」。当缓存容量达到上限时，它应该在写入新数据之前删除最久未使用的数据值，从而为新的数据值留出空间。  
-**方法：双向链表+哈希表**  
+**方法1：双向链表+哈希表**  
 使用双向链表存储key值，不管是get还是put，始终将最近使用的key值保存在表尾，使用哈希表存储key和value，则最近最少使用的key即为链表头部元素，分情况书写代码。  
 ```java  
 class LRUCache{  
@@ -397,6 +408,86 @@ class LRUCache{
  * int param_1 = obj.get(key);  
  * obj.put(key,value);  
  */  
+```  
+**方法2：手写双向链表+哈希表**  
+* 手写一个双向链表类  
+* 这里使用头部作为最新结点，尾部为最近最少使用的结点  
+* 哈希表存储的是key和Node  
+```java  
+class LRUCache {  
+
+    HashMap<Integer, Node> map;  
+    Node head, tail;  
+    int cap;  
+
+    // 设置第一个结点为最新的结点  
+    public LRUCache(int capacity) {  
+        map = new HashMap<>();  
+        cap = capacity;  
+        head = new Node(-1, -1);  
+        tail = new Node(-1, -1);  
+        head.next = tail;  // 设置头尾结点，防止溢出  
+        tail.pre = head;  
+    }  
+
+    public void put(int key, int value){  
+        // 若已经包含key  
+        if(map.containsKey(key)){  
+            Node node = map.get(key);  
+            node.val = value;  
+            node.pre.next = node.next;  // 先从中间删除该结点  
+            node.next.pre = node.pre;  
+            moveToHead(node);    // 移动到头部  
+            map.put(key, node);  // 更新map  
+        }  
+        else if(cap <= 0){  
+            map.remove(tail.pre.key);  // 删除key  
+            tail.pre.pre.next = tail;  // 删除最后一个结点，即尾结点的前一结点  
+            tail.pre = tail.pre.pre;  
+            // 注意，这里先新建，不能直接传入，否则map存储的是未链接的链表  
+            Node node = new Node(key, value);  
+            moveToHead(node);  
+            map.put(key, node);  
+        }  
+        else{  
+            // 同样也要新建  
+            Node node = new Node(key, value);  
+            moveToHead(node);  
+            map.put(key, node);  
+            cap--;  
+        }  
+    }  
+
+    public int get(int key){  
+        if(map.containsKey(key)){  
+            Node node = map.get(key);  
+            node.pre.next = node.next;  
+            node.next.pre = node.pre;  
+            moveToHead(node);  
+            
+            return node.val;  
+        }  
+        return -1;  
+    }  
+
+    // 双向链表类  
+    private class Node{  
+        int key, val;  
+        Node pre, next;  
+        Node(int key, int val){  
+            this.key = key;  
+            this.val = val;  
+        }  
+    }  
+
+    // 移动到头结点之后，即最新的结点  
+    private void moveToHead(Node node){  
+        node.next = head.next;  
+        node.next.pre = node;  
+        head.next = node;  
+        node.pre = head;  
+    }  
+}  
 ```  
 ### 12. 从中序与后序遍历序列构造二叉树  
 中序遍历 inorder = [9,3,15,20,7]  
@@ -590,6 +681,8 @@ class Solution {
     }  
 }  
 ```  
+
+## 字符串
 ### 18. 最长不含重复字符的子字符串  
 请从字符串中找出一个最长的不包含重复字符的子字符串，计算该最长子字符串的长度。  
 **方法：滑动窗口**  
@@ -781,28 +874,47 @@ class Solution {
     }  
 }  
 ```  
-### 23. 整数反转  
-给你一个 32 位的有符号整数 x ，返回 x 中每位上的数字反转后的结果。  
-如果反转后整数超过 32 位的有符号整数的范围 [−231,  231 − 1] ，就返回 0。  
-输入：x = -123  
-输出：-321  
-**方法：整除和除法**  
-* 用long存储最终计算得到的结果，然后对x进行反转计算  
-* 最后结果使用int转化，若结果不变，说明未超出范围，返回int转化后的结果，否则输出0  
+### 23. 回文链表  
+判断一个链表是否为回文链表  
+输入: 1->2->2->1  
+输出: true  
+**方法：快慢指针+反转链表**  
+* 定义快慢指针，遍历链表，得到链表中点的过程中反转链表前半部分  
+* 注意遍历条件，以及最终慢指针的位置  
+* 接着比较前半部分链表与后半部分链表的值  
 ```java  
 class Solution {  
-    public int reverse(int x) {  
-        long n = 0;  
-        while(x != 0){  
-            n = n * 10 + x % 10;  
-            x /= 10;  
+    public boolean isPalindrome(ListNode head) {  
+        if(head == null || head.next == null)  
+            return true;  
+
+        ListNode slow = head, fast = head;  
+        ListNode pre = null;  
+        // 若为偶数，则slow为中间的右边节点，若为偶数，slow在中间  
+        while(fast != null && fast.next != null){  
+            fast = fast.next.next;  
+            ListNode tmp = slow.next;  
+            slow.next = pre;  
+            pre = slow;  
+            slow = tmp;  
         }  
-
-        return (int)n == n ? (int)n : 0;  
-
+        // 奇数链表，中间一个节点不比较  
+        if(fast != null){  
+            slow = slow.next;  
+        }  
+        while(slow != null){  
+            if(pre.val != slow.val)  
+                return false;  
+            slow = slow.next;  
+            pre = pre.next;  
+        }  
+        return true;  
+    
     }  
 }  
 ```  
+
+
 ### 24. 二分查找  
 请实现有重复数字的升序数组的二分查找。  
 输出在数组中第一个大于等于查找值的位置，如果数组中不存在这样的数(指不存在大于等于查找值的数)，则输出数组长度加一。  
@@ -811,29 +923,166 @@ class Solution {
 **方法：二分**  
 二分模板题目，注意while循环中left和right的关系，以及mid和+1、-1的区别。  
 ```java  
-public class Solution {
-    /**
-     * 二分查找
-     * @param n int整型 数组长度
-     * @param v int整型 查找值
-     * @param a int整型一维数组 有序数组
-     * @return int整型
-     */
-    public int upper_bound_ (int n, int v, int[] a) {
-        int left = 0, right = n - 1;
-        while(left <= right){
-            int mid = left + (right - left) / 2;
-            if(v <= a[mid]){
-                if(mid == 0 || v > a[mid-1])
-                    return mid + 1;
-                else
-                    right = mid - 1;
-            }
-            else{
-                left = mid + 1;
-            }
-        }
-        return n + 1;
-    }
-}
+public class Solution {  
+    /**  
+     * 二分查找  
+     * @param n int整型 数组长度  
+     * @param v int整型 查找值  
+     * @param a int整型一维数组 有序数组  
+     * @return int整型  
+     */  
+    public int upper_bound_ (int n, int v, int[] a) {  
+        int left = 0, right = n - 1;  
+        while(left <= right){  
+            int mid = left + (right - left) / 2;  
+            if(v <= a[mid]){  
+                if(mid == 0 || v > a[mid-1])  
+                    return mid + 1;  
+                else  
+                    right = mid - 1;  
+            }  
+            else{  
+                left = mid + 1;  
+            }  
+        }  
+        return n + 1;  
+    }  
+}  
 ```  
+### 25. 版本号比较  
+给你两个版本号 version1 和 version2 ，请你比较它们。  
+
+版本号由一个或多个修订号组成，各修订号由一个 '.' 连接。每个修订号由 多位数字 组成，可能包含 前导零 。每个版本号至少包含一个字符。修订号从左到右编号，下标从 0 开始，最左边的修订号下标为 0 ，下一个修订号下标为 1 ，以此类推。例如，2.5.33 和 0.1 都是有效的版本号。  
+比较版本号时，请按从左到右的顺序依次比较它们的修订号。比较修订号时，只需比较 忽略任何前导零后的整数值 。也就是说，修订号 1 和修订号 001 相等 。如果版本号没有指定某个下标处的修订号，则该修订号视为 0 。例如，版本 1.0 小于版本 1.1 ，因为它们下标为 0 的修订号相同，而下标为 1 的修订号分别为 0 和 1 ，0 < 1 。  
+返回规则如下：  
+如果 version1 > version2 返回 1，  
+如果 version1 < version2 返回 -1，  
+除此之外返回 0。  
+**方法：split+循环**  
+* 使用split分隔为字符数组，比较字符数组的大小  
+* 使用Integer.valueOf()转换为数字，如果某一方为空则置为0比较  
+```java  
+class Solution {  
+    public int compareVersion(String version1, String version2) {  
+        String[] strArr1 = version1.split("\\.");  // 转义两次  
+        String[] strArr2 = version2.split("\\.");  
+
+        for(int i = 0; i < Math.max(strArr1.length, strArr2.length); i++){  
+            int m = i < strArr1.length ? Integer.valueOf(strArr1[i]) : 0;  
+            int n = i < strArr2.length ? Integer.valueOf(strArr2[i]) : 0;  
+            if(m > n)  
+                return 1;  
+            if(m < n)  
+                return -1;  
+        }  
+        
+        return 0;  
+    }  
+}  
+```  
+### 26. 乘积最大子数组  
+给你一个整数数组 nums ，请你找出数组中乘积最大的连续子数组（该子数组中至少包含一个数字），并返回该子数组所对应的乘积。  
+输入: [2,3,-2,4]  
+输出: 6  
+解释: 子数组 [2,3] 有最大乘积 6。  
+**方法：动态规划思想**  
+* 定义初始变量imax和imin，保存最大值和最小值  
+* 如果数组的数时负数，则相乘之后最大的会变成最小的，最小的会变成最大的  
+* 因此交换最大值和最小值，继续遍历比较，注意当前项要和nums[i]比较  
+```java  
+class Solution {  
+    public int maxProduct(int[] nums) {  
+        if(nums.length <= 0)  
+            return -1;  
+        int max = Integer.MIN_VALUE;  
+        int iMax = 1, iMin = 1;  
+        for(int i = 0; i < nums.length; i++){  
+            // 交换最大最小值  
+            if(nums[i] < 0){  
+                int tmp = iMax;  
+                iMax = iMin;  
+                iMin = tmp;  
+            }  
+            // 注意，要和nums[i]比较  
+            iMax = Math.max(nums[i], iMax * nums[i]);  
+            iMin = Math.min(nums[i], iMin * nums[i]);  
+
+            max = Math.max(max, iMax);  
+        }  
+
+        return max;  
+
+    }  
+}  
+```  
+### 27. 最长公共子序列  
+给定两个字符串 text1 和 text2，返回这两个字符串的最长公共子序列的长度。  
+一个字符串的 子序列 是指这样一个新的字符串：它是由原字符串在不改变字符的相对顺序的情况下删除某些字符（也可以不删除任何字符）后组成的新字符串。  
+例如，"ace" 是 "abcde" 的子序列，但 "aec" 不是 "abcde" 的子序列。两个字符串的「公共子序列」是这两个字符串所共同拥有的子序列。  
+若这两个字符串没有公共子序列，则返回 0。  
+输入：text1 = "abcde", text2 = "ace"  
+输出：3  
+解释：最长公共子序列是 "ace"，它的长度为 3。  
+**方法：动态规划**  
+* 二维数组动态规划，dp[i][j]从三个方向获取值，分别为上、左、左上  
+* 当有元素相等时，子序列长度加1，否则长度等于左和上的较大值  
+```java  
+class Solution {  
+    public int longestCommonSubsequence(String text1, String text2) {  
+        int m = text1.length();  
+        int n = text2.length();  
+        int[][] dp = new int[m+1][n+1];  
+        for(int i = 1; i <= m; i++){  
+            for(int j = 1; j <= n; j++){  
+                if(text1.charAt(i-1) == text2.charAt(j-1))  
+                    dp[i][j] = dp[i-1][j-1] + 1;  
+                else  
+                    dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);  
+            }  
+        }  
+
+        return dp[m][n];  
+    }  
+}  
+```  
+### 28. 合并k个升序链表  
+给你一个链表数组，每个链表都已经按升序排列。  
+请你将所有链表合并到一个升序链表中，返回合并后的链表。  
+输入：lists = [[1,4,5],[1,3,4],[2,6]]  
+输出：[1,1,2,3,4,4,5,6]  
+解释：链表数组如下：  
+[  
+  1->4->5,  
+  1->3->4,  
+  2->6  
+]  
+将它们合并到一个有序链表中得到。  
+1->1->2->3->4->4->5->6  
+**方法：优先队列 —— PriorityQueue**  
+
+
+### 29. 圆圈中最后剩下的数字(约瑟夫环)  
+0,1,···,n-1这n个数字排成一个圆圈，从数字0开始，每次从这个圆圈里删除第m个数字（删除后从下一个数字开始计数）。求出这个圆圈里剩下的最后一个数字。  
+例如，0、1、2、3、4这5个数字组成一个圆圈，从数字0开始每次删除第3个数字，则删除的前4个数字依次是2、0、4、1，因此最后剩下的数字是3。  
+输入: n = 5, m = 3  
+输出: 3  
+**方法：递推公式**  
+解析：[约瑟夫环](https://leetcode-cn.com/problems/yuan-quan-zhong-zui-hou-sheng-xia-de-shu-zi-lcof/solution/huan-ge-jiao-du-ju-li-jie-jue-yue-se-fu-huan-by-as/)  
+```java  
+class Solution {
+public:
+    int lastRemaining(int n, int m) {
+        int pos = 0; // 最终活下来那个人的初始位置
+        for(int i = 2; i <= n; i++){
+            pos = (pos + m) % i;  // 每次循环右移
+        }
+        return pos;
+    }
+}  
+```  
+## 动态规划
+
+## 其他
+
+
+## 方法简记

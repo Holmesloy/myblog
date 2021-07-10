@@ -309,8 +309,9 @@ pending->resolved或rejected都不可逆，但resolved和rejected可以互相转
 * then正常返回resolved，里面发生错误则返回rejected  
 * catch正常返回resolved，里面发生错误则返回rejected  
 ### Promise.all用法  
-Promise.all接收一个iterable类型（Array,Map,Set）作为参数，数组中每项都是都是Promise的实例。当数组中每个Promise的最终状态都是成功态时，Promise.all的状态也是成功态，然后可以执行相应回调。否则执行失败回调。  
-注：执行回调的数据是一个数组，包含其中每个Promise的状态数据  
+Promise.all接收一个iterable类型（Array,Map,Set）作为参数，数组中每项都是都是Promise的实例。当数组中每个Promise的最终状态都是成功态时，Promise.all的状态也是成功态，然后可以执行相应回调。有一个失败则执行失败回调。  
+注：执行成功回调的数据是一个数组，包含其中每个Promise的状态数据  
+执行失败回调的数据为最先进入失败状态的Promise返回的数据  
 ```js  
 let p1 = new Promise((resolve, reject) => {});  
 let p2 = new Promise((resolve, reject) => {});  
@@ -320,7 +321,7 @@ let p = Promise.all([p1, p2, p3]);
 
 p.then((res) => {   // res为一个数组
     // p1,p2,p3全都执行成功回调p才执行成功回调  
-}).catch(() => {  
+}).catch((err) => {  // err为最先失败返回的数据  
     // 出错或者p1,p2,p3出现失败回调则p执行失败回调  
 })  
 ```  
@@ -495,4 +496,20 @@ for(let i of nums){
 // 结果：每隔1s打出一个结果  
 // 原因：for...of特性，一个接一个执行  
 ```  
+## CommonJS模块与ES6模块
+### CommonJS模块
+* 动态引入，执行时引入，即代码中可以使用`require(..)`引入
+* 引用属于值的拷贝，所以模块中的值不会改变已经加载的值
+* 使用require命令加载模块时，会加载整个模块，只会加载一次，用到值时使用加载的缓存值
+* this指向当前模块
 
+### ES6模块
+* 静态引入，即在文件头部使用import，编译时引用，可以静态分析，实现Tree-Shaking
+* ES6模块中的值属于“动态只读引用”，即不允许修改引入变量的值，原始值变化时，import加载的值也会发生变化
+* 运行时加载，依然是动态引用，只要两个模块之前存在引用，代码就能执行
+* this指向undefined
+
+### AMD和CMD规范
+* AMD推崇依赖前置，在定义模块的时候就要声明其依赖的模块
+* CMD推崇就近依赖，只有在用到某个模块的时候再去require
+* AMD用户体验好，因为没有延迟，依赖模块提前执行了，CMD性能好，因为只有用户需要的时候才执行

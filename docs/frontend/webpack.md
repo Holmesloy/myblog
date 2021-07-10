@@ -13,19 +13,30 @@
 * 组成：
 
 ### Loader
-* Wepack本身只能加载JS模块，如果要加载其他类型文件，需要使用Loader进行转换/加载
+* Wepack本身只能加载JS模块，如果要加载其他类型文件，需要使用Loader进行转换/加载，执行顺序从后往前
 * Loader本身也是运行在node.js环境中的Javascript模块
 * 本身是一个函数，接收源文件作为参数，返回转换的结果
 * loader一般以xxx-loader方式命名，xxx表示要做的转换功能，如json-loader
-
+ 
 ### Plugin
 * 插件用来完成一些loader不能完成的功能
 * 插件一般在Webpack的配置信息plugins选项中指定
 * Webpack本身内置了一些常用插件，其他通过npm安装
 
+### module,chunk,bundle
+* module - 各个源码文件，webpack中一切皆模块
+* chunk - 多模块输出合并成的，如entry、import()，一个chunk输出一个bundle
+* bundle - 最终的输出文件
+
 
 
 ## 基本配置
+* 拆分配置和merge：dev、prod、common，使用smart引入
+* 配置本地服务：本地服务器、跨域代理
+* 处理ES6：babel
+* 处理CSS：postcss、css-loader、style-loader
+* 处理图片：小图片使用base64格式输出（较少一次http请求）
+
 
 ### webpack配置  
 安装：  
@@ -120,6 +131,26 @@ module.exports = {
 }  
 
 ```  
+### webpack性能优化
+* 优化打包构建速度 —— 开发体验和效率
+* 优化产出代码 —— 产品性能
+
+**构建速度**
+* 优化babel-loader：开启缓存，添加cacheDirectory，然后排除文件范围
+* IgnorePlugin：避免引入无用模块，忽略目录，手动引用需要的部分即可
+* noParse：引入，但不打包
+* happyPack：多进程打包，将一些资源放到happyPack中打包，添加id和use
+* ParallelUglifyPlugin：多进程压缩js，内置Uglify压缩js
+* 自动刷新：开发环境配置了dev-server会自动开启，代码改变自动刷新浏览器
+* 热更新：新代码生效，网页不刷新，状态不丢失，dev-server中hot:true，需要注册一个监听范围，书写热更新之后的代码逻辑
+* DllPlugin：动态链接库插件，同一个版本只构建一次，已经内置，打包出dll文件，DllReferencePlugin使用dll文件
+
+**产出代码**
+* 小图片使用base64编码，减少一次http请求
+* bundle加hash
+* 懒加载
+* 提取公共代码
+* CDN加速：配置publicPath路径前缀，然后将js文件和css文件、图片等上传到cdn
 
 ## linux命令  
 * 公司的线上机器一般都是linux  
