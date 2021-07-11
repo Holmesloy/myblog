@@ -1,12 +1,12 @@
 # React  
 
 ## React和Vue对比  
-* 同样使用虚拟DOM，diff算法，支持组件化，数据驱动视图  
+* 同样使用虚拟DOM，diff算法，支持组件化，数据驱动视图(test)
 * Vue采用传统三段式结构，书写更清晰；而React使用JSX语法，混合JS与HTML，更加灵活  
 * Vue原生支持双向绑定，方便数据和视图同步；而React采用单向数据流，可采用onChange和setState实现双向  
 * Vue原生提供指令便于功能开发，React偏向使用ES6语法实现，对JS语法要求更高  
 
-## React基本使用  
+## React基本使用 
 
 ### JSX  
 * HTML和JS逻辑耦合  
